@@ -1,4 +1,4 @@
-# CLAUDE.md — fpl0.github.io
+# CLAUDE.md — fpl0.panel
 
 ## Project Overview
 
