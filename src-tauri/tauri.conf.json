@@ -12,6 +12,7 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "fpl0.panel",
         "width": 1200,
         "height": 800,
