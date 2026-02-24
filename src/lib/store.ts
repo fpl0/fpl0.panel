@@ -152,7 +152,9 @@ export async function initApp() {
       const entries = await listContent(cfg.repo_path);
       setState("entries", reconcile(entries));
       setupWatcher(cfg.repo_path);
-      startDevServer(cfg.repo_path).catch(() => {});
+      startDevServer(cfg.repo_path).catch((err) => {
+        addToast(`Dev server failed: ${err}`, "error");
+      });
     }
   } catch {
     // First launch — no config yet
