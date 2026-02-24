@@ -1,4 +1,4 @@
-# fpl0.panel
+# fpl0.github.io
 
 A management panel for editing and publishing content to [fpl0.io](https://fpl0.io).
 
