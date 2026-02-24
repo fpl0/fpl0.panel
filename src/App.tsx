@@ -1,5 +1,6 @@
 import { onMount, onCleanup, Show } from "solid-js";
 import { open } from "@tauri-apps/plugin-dialog";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { validateRepoPath } from "./lib/commands";
 import {
   state,
@@ -18,6 +19,10 @@ import { SearchModal } from "./components/SearchModal";
 export function App() {
   onMount(() => {
     initApp();
+    // Prevent flicker by showing window only after initial mount
+    setTimeout(() => {
+      getCurrentWindow().show();
+    }, 100);
   });
 
   // --- Global keyboard shortcuts ---
