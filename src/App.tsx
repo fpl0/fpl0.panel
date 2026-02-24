@@ -17,12 +17,10 @@ import { ToastContainer } from "./components/ToastContainer";
 import { SearchModal } from "./components/SearchModal";
 
 export function App() {
-  onMount(() => {
-    initApp();
-    // Prevent flicker by showing window only after initial mount
-    setTimeout(() => {
-      getCurrentWindow().show();
-    }, 100);
+  onMount(async () => {
+    await initApp();
+    // Prevent flicker by showing window only after initial mount + theme resolution
+    getCurrentWindow().show();
   });
 
   // --- Global keyboard shortcuts ---
