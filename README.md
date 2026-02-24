@@ -2,6 +2,8 @@
 
 A management panel for editing and publishing content to [fpl0.io](https://fpl0.io).
 
+![Dashboard Screenshot](./dashboard.png)
+
 ## Features
 
 - **MDX Editor**: A custom TipTap editor built for writing and managing blog posts with technical components (code blocks, diagrams, and media).
