@@ -1,0 +1,330 @@
+/* ==========================================================================
+   DESIGN TOKENS
+   Copied from fpl0.blog global.css — all :root and dark theme variables
+   ========================================================================== */
+
+/* ==========================================================================
+   FONT FACE DECLARATIONS
+   ========================================================================== */
+
+/* Inter Variable — Latin subset only */
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: block;
+  font-weight: 100 900;
+  src: url("@fontsource-variable/inter/files/inter-latin-wght-normal.woff2")
+    format("woff2-variations");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Inter fallback — Arial with metrics adjusted to match Inter */
+@font-face {
+  font-family: "Inter Fallback";
+  src: local("Arial");
+  font-style: normal;
+  font-weight: 100 900;
+  size-adjust: 108.19%;
+  ascent-override: 89.55%;
+  descent-override: 22.30%;
+  line-gap-override: 0%;
+}
+
+/* Merriweather — Latin subset, light (body text) */
+@font-face {
+  font-family: "Merriweather";
+  font-style: normal;
+  font-display: block;
+  font-weight: 300;
+  src: url("@fontsource/merriweather/files/merriweather-latin-300-normal.woff2") format("woff2");
+}
+
+/* Merriweather — Latin subset, regular (strong/emphasis in prose) */
+@font-face {
+  font-family: "Merriweather";
+  font-style: normal;
+  font-display: block;
+  font-weight: 400;
+  src: url("@fontsource/merriweather/files/merriweather-latin-400-normal.woff2") format("woff2");
+}
+
+/* Merriweather — Latin subset, bold */
+@font-face {
+  font-family: "Merriweather";
+  font-style: normal;
+  font-display: block;
+  font-weight: 700;
+  src: url("@fontsource/merriweather/files/merriweather-latin-700-normal.woff2") format("woff2");
+}
+
+/* Merriweather fallback — Georgia with metrics adjusted to match Merriweather */
+@font-face {
+  font-family: "Merriweather Fallback";
+  src: local("Georgia");
+  font-style: normal;
+  font-weight: 300 700;
+  size-adjust: 113.82%;
+  ascent-override: 86.45%;
+  descent-override: 23.98%;
+  line-gap-override: 0%;
+}
+
+/* Space Mono — Latin subset */
+@font-face {
+  font-family: "Space Mono";
+  font-style: normal;
+  font-display: block;
+  font-weight: 400;
+  src: url("@fontsource/space-mono/files/space-mono-latin-400-normal.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* JetBrains Mono — Latin subset */
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-display: block;
+  font-weight: 400;
+  src: url("@fontsource/jetbrains-mono/files/jetbrains-mono-latin-400-normal.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  /* --- Spacing Engine (4px Grid) --- */
+  --grid: 0.25rem;
+  --space-px: 1px;
+  --space-0-375: 1.5px;
+  --space-0-5: 2px;
+  --space-0-75: 3px;
+  --space-1: var(--grid);
+  --space-1-25: 5px;
+  --space-2: calc(var(--grid) * 2);
+  --space-2-5: 10px;
+  --space-3: calc(var(--grid) * 3);
+  --space-3-5: 14px;
+  --space-4: calc(var(--grid) * 4);
+  --space-4-5: 18px;
+  --space-5: calc(var(--grid) * 5);
+  --space-6: calc(var(--grid) * 6);
+  --space-7: calc(var(--grid) * 7);
+  --space-8: calc(var(--grid) * 8);
+  --space-9: calc(var(--grid) * 9);
+  --space-10: calc(var(--grid) * 10);
+  --space-11: calc(var(--grid) * 11);
+  --space-12: calc(var(--grid) * 12);
+  --space-14: calc(var(--grid) * 14);
+  --space-16: calc(var(--grid) * 16);
+  --space-17: calc(var(--grid) * 17);
+  --space-18: calc(var(--grid) * 18);
+  --space-24: calc(var(--grid) * 24);
+  --space-32: calc(var(--grid) * 32);
+  --space-36: calc(var(--grid) * 36);
+  --space-37-5: calc(var(--grid) * 37.5);
+  --space-48: calc(var(--grid) * 48);
+  --space-55: calc(var(--grid) * 55);
+  --space-80: calc(var(--grid) * 80);
+  --space-100: calc(var(--grid) * 100);
+  --space-110: calc(var(--grid) * 110);
+  --space-125: calc(var(--grid) * 125);
+  --space-140: calc(var(--grid) * 140);
+
+  /* --- Vertical Rhythm Engine --- */
+  --baseline: 1.5rem; /* 24px default */
+  --space-y-sm: calc(var(--baseline) * 0.5);
+  --space-y-md: var(--baseline);
+  --space-y-lg: calc(var(--baseline) * 1.5);
+  --space-y-xl: calc(var(--baseline) * 2);
+
+  /* --- Spring Dynamics Engine --- */
+  --spring-stiff: cubic-bezier(0.17, 0.67, 0.16, 0.99);
+  --spring-bouncy: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --spring-soft: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* --- Fluid Type Engine (Dual-Modular Scale) --- */
+  --font-ratio-content: 1.25;  /* Major Third for prose/headings */
+  --font-ratio-ui: 1.125;      /* Major Second for interface chrome */
+  
+  --font-size-base: clamp(1rem, 0.11vw + 0.96rem, 1.0625rem);
+  
+  /* Content Hierarchy (1.25 ratio) */
+  --font-size-h3: calc(var(--font-size-base) * var(--font-ratio-content));
+  --font-size-h2: calc(var(--font-size-h3) * var(--font-ratio-content));
+  --font-size-h1: calc(var(--font-size-h2) * var(--font-ratio-content));
+
+  --font-size-body: var(--font-size-base);
+  --font-size-lead: 1.5rem;
+
+  /* UI Scale (Major Second) */
+  --font-size-sm: calc(var(--font-size-base) / var(--font-ratio-ui));
+  --font-size-xs: calc(var(--font-size-sm) / var(--font-ratio-ui));
+  --font-size-xxs: calc(var(--font-size-xs) / var(--font-ratio-ui));
+  --font-size-label: calc(var(--font-size-xxs) / var(--font-ratio-ui));
+  --font-size-micro: clamp(0.75rem, calc(var(--font-size-label) / var(--font-ratio-ui)), 0.8rem);
+
+  /* Optical Balance Engine */
+  --font-weight-ui-sm: 500;
+  --font-weight-ui-xs: 600;
+  --font-weight-ui-micro: 700;
+  
+  --letter-spacing-ui-xs: 0.02em;
+  --letter-spacing-ui-micro: 0.05em;
+
+  --lh-ratio: 1.15;
+  --line-height-tight: var(--lh-ratio);
+  --line-height-snug: calc(var(--lh-ratio) + 0.15);
+  --line-height-subhead: calc(var(--lh-ratio) + 0.3);
+  --line-height-normal: calc(var(--lh-ratio) * 1.3);
+  --line-height-relaxed: calc(var(--lh-ratio) * 1.5);
+  --line-height-loose: calc(var(--lh-ratio) * 1.7);
+
+  /* --- Color Synthesis (OKLCH) --- */
+  --hue: 85;
+  --color-bg: oklch(0.97 0.015 var(--hue));
+  --color-surface: oklch(0.94 0.02 var(--hue));
+  --color-surface-raised: oklch(0.91 0.025 var(--hue));
+  --color-highlight: oklch(0.92 0.04 var(--hue));
+
+  --text-hue: 45;
+  --color-text: oklch(0.22 0.03 var(--text-hue));
+  --color-text-secondary: oklch(0.42 0.02 var(--text-hue));
+  --color-text-muted: oklch(0.52 0.015 var(--text-hue));
+
+  --color-primary: oklch(0.55 0.12 55);
+  --color-primary-dim: oklch(0.65 0.1 55);
+  --color-accent-cool: oklch(0.55 0.08 190);
+
+  --color-warn: oklch(0.65 0.15 80);
+  --color-error: oklch(0.55 0.18 25);
+
+  --color-border: oklch(0.88 0.02 var(--hue));
+  --color-border-subtle: oklch(0.92 0.01 var(--hue));
+
+  /* --- Chromatic Elevation --- */
+  --shadow-color: oklch(0.1 0.02 var(--hue) / 0.08);
+  --shadow-sm: 0 1px 2px 0 var(--shadow-color);
+  --shadow-md: 0 4px 6px -1px var(--shadow-color);
+  --shadow-lg: 0 10px 15px -3px var(--shadow-color);
+  --shadow-xl: 0 25px 50px -12px var(--shadow-color);
+
+  --color-overlay: oklch(0.15 0.05 45 / 0.6);
+  --color-overlay-heavy: oklch(0.1 0.05 45 / 0.9);
+  --color-overlay-text: oklch(0.97 0.015 85);
+
+  --color-code-bg: oklch(0.96 0.01 85);
+  --color-code-border: oklch(0.9 0.015 85);
+  --color-code-header-bg: oklch(0.93 0.015 85);
+  --color-code-inline-bg: oklch(0.92 0.02 85);
+  --color-code-inline-text: oklch(0.45 0.1 55);
+  --color-code-inline-border: oklch(0.88 0.02 85);
+
+  --color-selection-bg: oklch(0.85 0.1 85);
+  --color-selection-text: oklch(0.2 0.05 45);
+
+  --color-muted: var(--color-text-muted);
+
+  --font-sans: "Inter Variable", "Inter Fallback", system-ui, sans-serif;
+  --font-serif: "Merriweather", "Merriweather Fallback", serif;
+  --font-display: var(--font-serif);
+  --font-mono-brand: "Space Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-full: 999px;
+  --radius-round: 50%;
+
+  --z-base: 1;
+  --z-float: 10;
+  --z-dropdown: 20;
+  --z-sticky: 50;
+  --z-fixed: 100;
+  --z-overlay: 1000;
+  --z-modal: 1010;
+  --z-toast: 9000;
+
+  --ease-out: var(--spring-soft);
+  --ease-spring: var(--spring-bouncy);
+  --duration-fast: 0.15s;
+  --duration-normal: 0.2s;
+  --duration-slow: 0.3s;
+
+  --duration-in: var(--duration-fast);
+  --duration-out: var(--duration-normal);
+
+  --serif-cap-ratio: 0.7;
+  --sans-cap-ratio: 0.72;
+
+  --grain: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+
+  --opacity-subtle: 0.35;
+  --opacity-muted: 0.5;
+  --opacity-recede: 0.6;
+  --opacity-de-emphasize: 0.8;
+  --opacity-hover: 0.9;
+
+  --letter-spacing-extra-tight: -0.04em;
+  --letter-spacing-tight: -0.03em;
+  --letter-spacing-snug: -0.02em;
+  --letter-spacing-tighter: -0.01em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-slight: 0.02em;
+  --letter-spacing-loose: 0.04em;
+  --letter-spacing-wide: 0.06em;
+  --letter-spacing-extra: 0.08em;
+
+  --content-width: 72ch;
+  --content-width-narrow: 60ch;
+
+  /* --- Semantic Abstraction Layer --- */
+  --ui-border: var(--space-px) solid var(--color-border);
+  --ui-border-subtle: var(--space-px) solid var(--color-border-subtle);
+  --ui-radius: var(--radius-lg);
+  --ui-radius-sm: var(--radius-sm);
+  --ui-radius-md: var(--radius-md);
+  --ui-focus-ring: var(--space-0-5) solid var(--color-primary);
+  --ui-shadow: var(--shadow-md);
+  --ui-shadow-hover: var(--shadow-lg);
+  --ui-inset: inset 0 2px 4px 0 var(--shadow-color);
+  --ui-inset-border: var(--space-px) solid var(--color-border-subtle);
+
+  /* --- Panel-specific tokens --- */
+  --sidebar-width: 48px;
+  --panel-gutter: var(--space-6);
+}
+
+[data-theme="dark"] {
+  --hue: 30;
+  --text-hue: 45;
+  --color-bg: oklch(0.18 0.012 var(--hue));
+  --color-surface: oklch(0.22 0.015 var(--hue));
+  --color-surface-raised: oklch(0.26 0.018 var(--hue));
+  --color-highlight: oklch(0.24 0.03 var(--hue));
+
+  --color-text: oklch(0.95 0.01 var(--text-hue));
+  --color-text-secondary: oklch(0.8 0.008 var(--text-hue));
+  --color-text-muted: oklch(0.65 0.005 var(--text-hue));
+
+  --color-primary: oklch(0.88 0.06 85);
+  --color-primary-dim: oklch(0.75 0.05 85);
+  --color-accent-cool: oklch(0.85 0.04 190);
+
+  --color-warn: oklch(0.8 0.1 80);
+  --color-error: oklch(0.7 0.12 25);
+
+  --color-border: oklch(0.28 0.02 var(--hue));
+  --color-border-subtle: oklch(0.24 0.015 var(--hue));
+
+  --shadow-color: oklch(0.02 0.01 var(--hue) / 0.6);
+
+  --color-code-bg: oklch(0.2 0.012 var(--hue));
+  --color-code-border: oklch(0.25 0.015 var(--hue));
+  --color-code-header-bg: oklch(0.23 0.015 var(--hue));
+  --color-code-inline-bg: oklch(0.24 0.015 var(--hue));
+  --color-code-inline-text: oklch(0.85 0.04 190);
+  --color-code-inline-border: oklch(0.28 0.015 var(--hue));
+}

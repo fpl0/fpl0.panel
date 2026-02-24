@@ -1,0 +1,372 @@
+/* ==========================================================================
+   CONTENT LIST — "The Ledger"
+   Matches blog's home.css ledger layout exactly.
+   Two-column grid: date on left, content on right.
+   Whitespace-only separation between entries.
+   ========================================================================== */
+
+/* --- Dashboard Container --- */
+
+.dash-container {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: var(--space-12);
+  height: 100%;
+  align-items: start;
+}
+
+/* --- Dashboard Sidebar --- */
+
+.dash-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  position: sticky;
+  top: 0;
+}
+
+.dash-sidebar-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.dash-sidebar-label {
+  font-family: var(--font-mono-brand);
+  font-size: var(--font-size-micro);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+  color: var(--color-text-muted);
+  opacity: 0.8;
+}
+
+.dash-stats-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.dash-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: var(--space-2);
+  border-bottom: var(--ui-border-subtle);
+}
+
+.dash-stat-label {
+  font-family: var(--font-mono-brand);
+  font-size: var(--font-size-label);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-ui-micro); /* Optical balance */
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-ui-micro); /* Optical balance */
+}
+
+.dash-stat-value {
+  font-family: var(--font-serif);
+  font-size: var(--font-size-h3); /* Slightly larger for emphasis */
+  font-weight: 300;
+  color: var(--color-text);
+}
+
+/* --- Health Sidebar --- */
+
+.dash-health-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.dash-health-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.dash-health-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-round);
+  flex-shrink: 0;
+}
+
+.dash-health-dot.up {
+  background: oklch(0.65 0.2 145);
+}
+
+.dash-health-dot.down {
+  background: var(--color-error);
+}
+
+.dash-health-text,
+.dash-health-link {
+  font-family: var(--font-mono-brand);
+  font-size: var(--font-size-micro);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-loose);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+}
+
+.dash-health-link:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.dash-activity-tag {
+  font-family: var(--font-mono-brand);
+  font-size: var(--font-size-micro);
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  display: inline-block;
+}
+
+/* --- Dashboard Main --- */
+
+.dash-main {
+  height: 100%;
+  padding-right: var(--space-4); /* Space for scrollbar */
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* --- Dashboard Sections --- */
+
+.dash-section {
+  margin-bottom: var(--space-y-lg);
+}
+
+.dash-section-label {
+  font-family: var(--font-mono-brand);
+  font-size: var(--font-size-micro);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-y-sm);
+}
+
+/* --- Filter Count Badge --- */
+
+.filter-count {
+  opacity: var(--opacity-recede);
+  margin-left: var(--space-1);
+}
+
+/* --- Filter Bar --- */
+
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-y-lg);
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.filter-chip {
+  font-family: var(--font-mono-brand);
+  font-size: var(--font-size-micro);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+  color: var(--color-text-muted);
+  text-decoration: none;
+  border: var(--space-px) solid var(--color-border);
+  border-radius: var(--radius-sm); /* More geometric than pills */
+  padding: var(--space-1) var(--space-3);
+  transition:
+    color var(--duration-normal) var(--ease-out),
+    border-color var(--duration-normal) var(--ease-out),
+    background-color var(--duration-normal) var(--ease-out);
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+  cursor: pointer;
+  background: none;
+  opacity: 0.8;
+}
+
+.filter-chip:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  opacity: 1;
+}
+
+.filter-chip.active {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  background: var(--color-highlight); /* Subtle highlight vs solid color */
+  font-weight: 600;
+}
+
+/* Search input — pill-shaped to match filter chips */
+.filter-search {
+  flex: 1;
+  min-width: 120px;
+  background: transparent;
+  border: var(--space-px) solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: var(--space-px) var(--space-3);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-xs);
+  color: var(--color-text);
+  outline: none;
+  line-height: 1.2;
+  transition:
+    color var(--duration-normal) var(--ease-out),
+    border-color var(--duration-normal) var(--ease-out);
+}
+
+.filter-search:focus {
+  border-color: var(--color-primary);
+}
+
+.filter-search::placeholder {
+  font-family: var(--font-mono-brand);
+  font-size: var(--font-size-micro);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-loose);
+  color: var(--color-muted);
+}
+
+/* --- Post List — Ledger Layout (from blog's home.css) --- */
+
+.post-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-y-md); /* Consistent baseline gap */
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Each entry: CSS Grid with status+date column + content column */
+.post-item {
+  display: grid;
+  grid-template-columns: var(--space-48) 1fr; /* Precisely 12rem on 4px grid */
+  gap: var(--space-6);
+  align-items: baseline;
+  transition: opacity var(--duration-normal) var(--ease-out);
+  container-type: inline-size;
+}
+
+/* --- Compact variant for "Continue Working" --- */
+
+.post-list.compact {
+  gap: var(--space-4);
+}
+
+.post-list.compact .post-item {
+  grid-template-columns: var(--space-24) 1fr;
+  gap: var(--space-3);
+}
+
+.post-list.compact .post-title {
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+}
+
+.post-list.compact .post-date-col {
+  padding-top: 0.2em;
+}
+
+.post-title:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-decoration-color: var(--color-primary);
+  text-underline-offset: var(--space-0-75);
+}
+
+/* Date + status column */
+.post-date-col {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  padding-top: 0.4em; /* token-exempt — optical baseline alignment */
+}
+
+.post-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-round);
+  flex-shrink: 0;
+}
+
+.post-status-dot.draft {
+  background: var(--color-warn);
+}
+
+.post-status-dot.published {
+  background: var(--color-primary);
+}
+
+.post-date {
+  font-family: var(--font-mono-brand);
+  font-size: var(--font-size-xxs);
+  font-weight: var(--font-weight-ui-xs); /* Optical balance */
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-ui-xs); /* Optical balance */
+  color: var(--color-text-muted);
+  opacity: 0.85;
+}
+
+/* Content column */
+.post-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.post-title {
+  font-family: var(--font-serif);
+  font-size: var(--font-size-h3); /* Scaled down for tighter ledger look */
+  font-weight: 700;
+  line-height: var(--line-height-snug);
+  color: var(--color-text);
+  margin-bottom: var(--space-1);
+  transition:
+    color var(--duration-normal) var(--ease-out),
+    text-decoration-color var(--duration-normal) var(--ease-out);
+  letter-spacing: var(--letter-spacing-snug);
+  cursor: pointer;
+  width: fit-content;
+  display: inline-block;
+}
+
+.post-summary {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-muted);
+  font-family: var(--font-sans);
+  line-height: var(--line-height-relaxed);
+  max-width: var(--content-width-narrow);
+  /* Truncate to 2 lines */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* --- Empty state --- */
+
+.content-empty {
+  padding: var(--space-16) 0;
+}
+
+.content-empty p {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-relaxed);
+  letter-spacing: var(--letter-spacing-slight);
+  color: var(--color-text-secondary);
+}

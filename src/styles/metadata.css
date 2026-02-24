@@ -1,0 +1,229 @@
+/* ==========================================================================
+   METADATA PANEL
+   Sidebar metadata fields — always visible
+   ========================================================================== */
+
+.metadata-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.metadata-body {
+  display: grid;
+  gap: var(--space-5);
+  flex: 1;
+}
+
+.metadata-footer {
+  margin-top: auto;
+  padding-top: var(--space-4);
+  border-top: var(--space-px) solid var(--color-border-subtle);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--space-1-25) * -1));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.metadata-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.metadata-dates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+/* Title input — large serif, no visible border */
+.metadata-title-input {
+  font-family: var(--font-serif);
+  font-size: var(--font-size-h3); /* Scaled down from h1/h2 for better balance */
+  font-weight: 700;
+  border: none;
+  background: none;
+  color: var(--color-text);
+  width: 100%;
+  padding: 0;
+  line-height: 1.2;
+  letter-spacing: var(--letter-spacing-snug);
+  transform: translateY(0.02em);
+  resize: none;
+  overflow: hidden;
+  display: block;
+}
+
+.metadata-title-input:focus {
+  outline: none;
+}
+
+.metadata-title-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.metadata-slug {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  border: none;
+  background: none;
+  width: 100%;
+  padding: 0;
+}
+
+.metadata-slug:focus {
+  outline: none;
+}
+
+.metadata-slug::placeholder {
+  color: var(--color-text-muted);
+}
+
+/* --- Summary field with char counter --- */
+
+.summary-wrapper {
+  position: relative;
+}
+
+.summary-counter {
+  position: absolute;
+  bottom: var(--space-2);
+  right: var(--space-3);
+  font-family: var(--font-mono-brand);
+  font-size: var(--font-size-xxs); /* Scaled counter */
+  letter-spacing: var(--letter-spacing-loose);
+}
+
+.summary-counter.warn {
+  color: var(--color-warn);
+}
+
+.summary-counter.error {
+  color: var(--color-error);
+}
+
+.summary-counter.valid {
+  color: var(--color-primary);
+}
+
+/* --- Tag Chip Input --- */
+
+.tag-input-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: var(--space-px) solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  transition: border-color var(--duration-normal) var(--ease-out);
+  min-height: calc(var(--space-4) * 2);
+}
+
+.tag-input-wrapper:focus-within {
+  border-color: var(--color-primary);
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-family: var(--font-mono-brand);
+  font-size: var(--font-size-xxs);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-ui-xs); /* Scale sync */
+  color: var(--color-text-muted);
+  border: var(--space-px) solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  padding: var(--space-px) var(--space-2);
+  line-height: 1;
+  background: var(--color-surface);
+  font-weight: var(--font-weight-ui-xs); /* Optical balance */
+}
+
+.tag-chip-remove {
+  cursor: pointer;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-label);
+  line-height: 1;
+  border: none;
+  background: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  transition: color var(--duration-normal) var(--ease-out);
+}
+
+.tag-chip-remove:hover {
+  color: var(--color-error);
+}
+
+.tag-input-field {
+  border: none;
+  background: none;
+  outline: none;
+  font-family: var(--font-mono-brand);
+  font-size: var(--font-size-micro);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-loose);
+  color: var(--color-text);
+  flex: 1;
+  min-width: 80px;
+  line-height: 1.2;
+}
+
+
+.tag-input-field::placeholder {
+  color: var(--color-muted);
+}
+
+/* --- Status badge — tag-pill style --- */
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  gap: var(--space-2);
+  font-family: var(--font-mono-brand);
+  font-size: var(--font-size-micro);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-loose);
+  padding: var(--space-px) var(--space-3);
+  border-radius: var(--radius-full);
+  border: var(--space-px) solid;
+  line-height: 1.2;
+}
+
+.status-badge.draft {
+  color: var(--color-warn);
+  border-color: var(--color-warn);
+}
+
+.status-badge.published {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+/* --- Metadata row (inline label + value) --- */
+
+.metadata-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+}
+
+.metadata-row .label {
+  flex-shrink: 0;
+  width: var(--space-24);
+  margin-bottom: 0;
+}

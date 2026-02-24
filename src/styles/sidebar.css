@@ -1,0 +1,256 @@
+/* ==========================================================================
+   TOP BAR
+   Matches blog's site-header-bar pattern exactly:
+   Logo on left, navigation + actions on right.
+   When in editor/detail: back link on left, title center, actions right.
+   ========================================================================== */
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: var(--space-12);
+  padding: 0 var(--panel-gutter);
+  border-bottom: var(--ui-border-subtle);
+  background: color-mix(in srgb, var(--color-bg) 80%, transparent);
+  backdrop-filter: blur(var(--space-3));
+  -webkit-backdrop-filter: blur(var(--space-3));
+  flex-shrink: 0;
+}
+
+/* --- Logo mark — matching blog's Logo.astro exactly --- */
+
+.top-bar-brand {
+  font-family: var(--font-mono-brand);
+  font-size: var(--font-size-h3);
+  font-weight: 400;
+  letter-spacing: var(--letter-spacing-extra-tight);
+  line-height: var(--line-height-tight);
+  color: var(--color-text);
+  cursor: pointer;
+  display: flex;
+  align-items: baseline;
+  transition: color var(--duration-normal) var(--ease-out);
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  text-decoration: none;
+}
+
+.top-bar-brand:hover {
+  color: var(--color-primary);
+  text-decoration: none;
+  background: none;
+}
+
+.cursor {
+  display: inline-block;
+  color: var(--color-primary);
+  margin-left: 0.05em;
+  animation: blink 1s step-end infinite;
+  width: 0.6em;
+  text-align: center;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cursor {
+    animation: none;
+  }
+}
+
+/* --- Navigation — matching blog's site-nav pattern --- */
+
+.top-bar-nav {
+  display: flex;
+  gap: var(--space-4);
+  align-items: center;
+  font-family: var(--font-mono-brand);
+  font-size: var(--font-size-xs);
+  letter-spacing: var(--letter-spacing-ui-xs);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-ui-sm);
+}
+
+.nav-link {
+  color: var(--color-muted);
+  text-decoration: none;
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+  transition: color var(--duration-normal) var(--ease-out);
+  display: inline-block;
+}
+
+.nav-link:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: var(--space-0-75);
+  background: none;
+}
+
+.nav-link.active {
+  color: var(--color-primary); /* Use primary for active link */
+  text-decoration: underline;
+  text-decoration-color: var(--color-primary);
+  text-underline-offset: var(--space-0-75);
+  text-decoration-thickness: var(--space-0-5);
+}
+
+.nav-sep {
+  color: var(--color-border);
+  user-select: none;
+}
+
+/* --- Keyboard shortcut hint (matching blog's search-kbd) --- */
+
+.nav-kbd {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-label);
+  padding: var(--space-1) var(--space-2);
+  background: var(--color-surface);
+  border: var(--space-px) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-muted);
+  margin-left: var(--space-1);
+}
+
+/* --- Theme toggle — rotating sun/moon from blog's ThemeToggle.astro --- */
+
+.theme-toggle {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-8);
+  height: var(--space-8);
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: var(--color-muted);
+  cursor: pointer;
+  transition: color var(--duration-out) var(--ease-out);
+}
+
+.theme-toggle:hover {
+  color: var(--color-primary);
+  transition-duration: var(--duration-in);
+}
+
+.theme-toggle:focus-visible {
+  outline: var(--ui-focus-ring);
+  outline-offset: var(--space-0-5);
+}
+
+.theme-toggle .icon {
+  width: var(--space-4);
+  height: var(--space-4);
+  position: absolute;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition:
+    opacity var(--duration-slow) var(--ease-out),
+    transform var(--duration-slow) var(--ease-out);
+}
+
+/* Default state: show sun (for dark mode) */
+.theme-toggle .icon-sun {
+  opacity: 1;
+  transform: rotate(0deg);
+}
+
+.theme-toggle .icon-moon {
+  opacity: 0;
+  transform: rotate(-90deg);
+}
+
+/* Light theme: show moon */
+[data-theme="light"] .theme-toggle .icon-sun {
+  opacity: 0;
+  transform: rotate(90deg);
+}
+
+[data-theme="light"] .theme-toggle .icon-moon {
+  opacity: 1;
+  transform: rotate(0deg);
+}
+
+/* ==========================================================================
+   EDITOR/DETAIL BAR
+   Three-column grid matching blog's app-shell-bar:
+   Back link | Title (center) | Actions (right)
+   ========================================================================== */
+
+.detail-bar {
+  display: grid;
+  grid-template-columns: minmax(var(--space-36), 1fr) auto minmax(var(--space-36), 1fr);
+  gap: var(--space-4);
+  align-items: center;
+  height: var(--space-12);
+  padding: 0 var(--panel-gutter);
+  border-bottom: var(--ui-border-subtle);
+  background: color-mix(in srgb, var(--color-bg) 80%, transparent);
+  backdrop-filter: blur(var(--space-3));
+  -webkit-backdrop-filter: blur(var(--space-3));
+  flex-shrink: 0;
+}
+
+.detail-bar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  justify-self: start;
+}
+
+.detail-bar-center {
+  justify-self: center;
+  font-family: var(--font-serif);
+  font-size: var(--font-size-h3); /* Using the content scale for the title */
+  letter-spacing: var(--letter-spacing-snug);
+  color: var(--color-text);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 40ch;
+  opacity: 1;
+}
+
+.detail-bar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  justify-self: end;
+}
+
+.back-link {
+  display: inline-block;
+  font-family: var(--font-mono-brand);
+  font-size: var(--font-size-xxs);
+  letter-spacing: var(--letter-spacing-loose);
+  color: var(--color-muted);
+  text-decoration: none;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  transition: color var(--duration-normal) var(--ease-out);
+}
+
+.back-link:hover {
+  color: var(--color-primary);
+  background: none;
+  text-decoration: none;
+}

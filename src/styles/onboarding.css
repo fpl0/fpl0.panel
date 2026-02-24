@@ -1,0 +1,79 @@
+/* ==========================================================================
+   ONBOARDING
+   Centered editorial welcome — matching blog's serif heading + mono chrome.
+   ========================================================================== */
+
+.onboarding {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: var(--space-8);
+}
+
+.onboarding-logo {
+  font-family: var(--font-mono-brand);
+  font-size: var(--font-size-h1);
+  font-weight: 400;
+  letter-spacing: var(--letter-spacing-extra-tight);
+  line-height: var(--line-height-tight);
+  color: var(--color-text);
+  margin-bottom: var(--space-12);
+  display: flex;
+  align-items: baseline;
+}
+
+.onboarding-subtitle {
+  font-family: var(--font-mono-brand);
+  font-size: var(--font-size-xxs);
+  letter-spacing: var(--letter-spacing-loose);
+  color: var(--color-muted);
+  margin-left: var(--space-4);
+}
+
+/* Bio quote style — matching blog's home page */
+.onboarding-quote {
+  max-width: 420px;
+  width: 100%;
+  margin-bottom: var(--space-8);
+  border-left: var(--space-0-5) solid var(--color-primary);
+  padding-left: var(--space-6);
+}
+
+.onboarding-quote p {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-relaxed);
+  letter-spacing: var(--letter-spacing-slight);
+  color: var(--color-text-secondary);
+  font-weight: 400;
+  margin: 0;
+}
+
+.onboarding-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.onboarding-hint {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-xs);
+  color: var(--color-muted);
+  line-height: var(--line-height-relaxed);
+  text-align: center;
+  max-width: 360px;
+}
+
+.onboarding-hint code {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xxs);
+  background: var(--color-surface);
+  padding: 0.2em 0.4em;
+  border-radius: var(--ui-radius-sm);
+  border: var(--ui-border);
+  color: var(--color-accent-cool);
+}

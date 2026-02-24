@@ -1,0 +1,89 @@
+/* ==========================================================================
+   CODE BLOCK
+   Copied from fpl0.blog — wrapper, language label, copy button, pre block
+   ========================================================================== */
+
+.code-wrapper {
+  position: relative;
+  margin: var(--space-y-lg) 0;
+  border-radius: var(--ui-radius);
+  background: var(--color-surface);
+  border: var(--ui-border);
+  overflow: hidden;
+}
+
+.code-lang {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-12);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-micro);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-extra);
+  color: var(--color-text-muted);
+  user-select: none;
+  pointer-events: none;
+  z-index: var(--z-float);
+  transition: color var(--duration-normal) var(--ease-out);
+}
+
+.code-copy {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  width: var(--space-8);
+  height: var(--space-8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface);
+  border: var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  color: var(--color-muted);
+  cursor: pointer;
+  transition: all var(--duration-normal) var(--ease-out);
+  z-index: var(--z-dropdown);
+  opacity: 1;
+}
+
+.code-copy:hover {
+  background: var(--color-highlight);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  box-shadow: var(--ui-shadow);
+}
+
+.code-copy svg {
+  width: var(--space-4);
+  height: var(--space-4);
+  position: absolute;
+  transition:
+    transform var(--duration-slow) var(--ease-spring),
+    opacity var(--duration-normal) var(--ease-out);
+}
+
+.icon-copy {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.icon-check {
+  opacity: 0;
+  transform: scale(0.5);
+  color: var(--color-primary);
+}
+
+.code-copy.copied .icon-copy {
+  opacity: 0;
+  transform: scale(0.5);
+}
+
+.code-copy.copied .icon-check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.code-copy.copied {
+  border-color: var(--color-primary);
+}

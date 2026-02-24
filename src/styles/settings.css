@@ -1,0 +1,84 @@
+/* ==========================================================================
+   SETTINGS
+   Minimal editorial layout — matching blog's about page structure.
+   ========================================================================== */
+
+.settings-view {
+  max-width: var(--content-width-narrow);
+}
+
+.settings-view h1 {
+  font-family: var(--font-serif);
+  font-size: var(--font-size-h2);
+  margin-bottom: var(--space-y-xl);
+}
+
+.settings-section {
+  margin-bottom: var(--space-y-xl);
+  border-bottom: var(--space-px) solid var(--color-border);
+  padding-bottom: var(--space-8);
+}
+
+.settings-section:last-child {
+  border-bottom: none;
+}
+
+.settings-section h2 {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: var(--font-size-h3);
+  color: var(--color-primary);
+  margin-bottom: var(--space-4);
+}
+
+.settings-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+}
+
+.settings-label {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+}
+
+.settings-value {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xxs);
+  color: var(--color-muted);
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-muted);
+  margin-top: var(--space-2);
+  line-height: var(--line-height-relaxed);
+}
+
+.settings-action {
+  margin-top: var(--space-3);
+}
+
+/* ==========================================================================
+   CREATE VIEW
+   Matching blog's editorial form layout with proper design token widths.
+   ========================================================================== */
+
+.create-view {
+  max-width: var(--content-width-narrow);
+}
+
+.create-field {
+  margin-bottom: var(--space-4);
+}
+
+.create-field-lg {
+  margin-bottom: var(--space-6);
+}

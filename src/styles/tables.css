@@ -1,0 +1,54 @@
+/* ==========================================================================
+   TABLE STYLES
+   Copied verbatim from fpl0.blog
+   ========================================================================== */
+
+.content .table-wrapper {
+  overflow-x: auto;
+  margin: var(--space-10) 0 0 0;
+  border-radius: var(--radius-md);
+  -webkit-overflow-scrolling: touch;
+}
+
+.content table {
+  width: 100%;
+  min-width: var(--space-100);
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-xs);
+  border: var(--space-px) solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  font-variant-numeric: tabular-nums;
+}
+
+.content th {
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-surface);
+  border-bottom: var(--space-px) solid var(--color-border);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: var(--font-size-label);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-loose);
+  font-variant-numeric: tabular-nums;
+}
+
+.content td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: var(--space-px) solid var(--color-border);
+  vertical-align: top;
+  color: var(--color-muted);
+}
+
+.content td strong {
+  color: var(--color-text);
+}
+
+.content tr:last-child td {
+  border-bottom: none;
+}
