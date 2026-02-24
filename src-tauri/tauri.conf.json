@@ -16,13 +16,13 @@
         "title": "fpl0.panel",
         "width": 1200,
         "height": 800,
-        "minWidth": 800,
-        "minHeight": 600,
+        "minWidth": 1024,
+        "minHeight": 720,
         "visible": false
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https: http://localhost:1420 ws://localhost:1421; font-src 'self' data:"
     }
   },
   "bundle": {

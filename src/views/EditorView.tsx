@@ -2,6 +2,7 @@ import { createSignal, createEffect, onMount, onCleanup, Show } from "solid-js";
 import type { ContentEntry } from "../lib/commands";
 import { readFile, writeFile } from "../lib/commands";
 import { parseMdxToEditor, serializeEditorToMdx } from "../lib/mdx";
+import { setYamlField } from "../lib/yaml";
 import {
   state,
   activeEntry,
@@ -16,6 +17,9 @@ import {
   lastExternalChange,
   clearExternalChange,
   suppressFsChange,
+  setNavigationGuard,
+  confirmNavigation,
+  cancelNavigation,
 } from "../lib/store";
 import { DetailBar } from "../components/Sidebar";
 import { TipTapEditor } from "../components/TipTapEditor";
@@ -34,6 +38,7 @@ export function EditorView(props: Props) {
   const [loading, setLoading] = createSignal(true);
   const [showDeleteConfirm, setShowDeleteConfirm] = createSignal(false);
   const [showUnpubConfirm, setShowUnpubConfirm] = createSignal(false);
+  const [showReloadConfirm, setShowReloadConfirm] = createSignal(false);
   const [publishing, setPublishing] = createSignal(false);
   const [showExternalBanner, setShowExternalBanner] = createSignal(false);
   const [wordCount, setWordCount] = createSignal(0);
@@ -49,6 +54,7 @@ export function EditorView(props: Props) {
     const e = activeEntry();
     if (!e) { navigate({ kind: "list" }); return; }
     filePath = e.file_path;
+    setNavigationGuard(true);
     try {
       const raw = await readFile(filePath);
       const { yaml: y, doc } = parseMdxToEditor(raw);
@@ -64,6 +70,26 @@ export function EditorView(props: Props) {
 
   onCleanup(() => {
     if (saveTimeout) clearTimeout(saveTimeout);
+    setNavigationGuard(false);
+    document.title = "fpl0.panel";
+  });
+
+  // Item 6 — Window title reflects current entry
+  createEffect(() => {
+    const entry = activeEntry();
+    if (entry) {
+      document.title = `${entry.title} — fpl0.panel`;
+    }
+  });
+
+  // Item 1 — Navigation guard: intercept pending navigation
+  createEffect(() => {
+    const pending = state.pendingNavigation;
+    if (!pending) return;
+    if (saveState() === "saved") {
+      confirmNavigation();
+    }
+    // If unsaved, the ConfirmDialog below will show
   });
 
   function handleEditorUpdate(doc: JSONContent) {
@@ -98,26 +124,12 @@ export function EditorView(props: Props) {
   }
 
   function handleMetadataChange(field: string, value: string) {
-    let yamlStr = yaml();
-    const fieldRegex = new RegExp(`^${field}:.*$`, "m");
-
-    if (field === "tags") {
-      if (fieldRegex.test(yamlStr)) {
-        yamlStr = yamlStr.replace(fieldRegex, `${field}: ${value}`);
-      } else {
-        yamlStr += `\n${field}: ${value}`;
-      }
-    } else if (fieldRegex.test(yamlStr)) {
-      yamlStr = yamlStr.replace(fieldRegex, `${field}: "${value}"`);
-    } else {
-      yamlStr += `\n${field}: "${value}"`;
-    }
-
-    setYaml(yamlStr);
+    const yamlValue = field === "tags" ? value : `"${value}"`;
+    setYaml(setYamlField(yaml(), field, yamlValue));
 
     // Optimistic store update for immediate UI feedback (DetailBar title, etc.)
     if (field === "tags") {
-      try { patchEntry(props.slug, { tags: JSON.parse(value) }); } catch { /* keep existing */ }
+      try { patchEntry(props.slug, { tags: JSON.parse(value) }); } catch { /* malformed JSON — keep existing tags */ }
     } else if (field === "title" || field === "summary") {
       patchEntry(props.slug, { [field]: value });
     }
@@ -133,7 +145,7 @@ export function EditorView(props: Props) {
       const raw = await readFile(filePath);
       const { yaml: y } = parseMdxToEditor(raw);
       setYaml(y);
-    } catch { /* entry may have been deleted */ }
+    } catch { /* entry may have been deleted — noop is intentional */ }
   }
 
   async function handlePublish() {
@@ -232,11 +244,20 @@ export function EditorView(props: Props) {
     clearExternalChange();
   }
 
+  // Item 2 — Reload with conflict guard
+  function handleReloadClick() {
+    if (saveState() !== "saved") {
+      setShowReloadConfirm(true);
+    } else {
+      reloadFromDisk();
+    }
+  }
+
   return (
     <Show when={activeEntry()} fallback={<div class="content-empty"><p>Entry not found.</p></div>} keyed>
       {(entry: ContentEntry) => (
         <>
-          <DetailBar title={entry.title}>
+          <DetailBar title="">
             <div class="save-indicator">
               <div class={`save-dot ${saveState()}`} />
               {saveState() === "saved" ? "Saved" : saveState() === "saving" ? "Saving..." : "Unsaved"}
@@ -260,7 +281,7 @@ export function EditorView(props: Props) {
           <Show when={showExternalBanner()}>
             <div class="external-change-banner">
               <span>This file was modified externally.</span>
-              <button class="btn btn-primary btn-sm" onClick={reloadFromDisk}>Reload from disk</button>
+              <button class="btn btn-primary btn-sm" onClick={handleReloadClick}>Reload from disk</button>
               <button class="btn btn-sm" onClick={() => { setShowExternalBanner(false); clearExternalChange(); }}>Dismiss</button>
             </div>
           </Show>
@@ -294,6 +315,30 @@ export function EditorView(props: Props) {
               confirmLabel="Unpublish"
               onConfirm={handleUnpublish}
               onCancel={() => setShowUnpubConfirm(false)}
+            />
+          )}
+
+          {/* Item 2 — Reload conflict warning */}
+          {showReloadConfirm() && (
+            <ConfirmDialog
+              title="Discard local changes?"
+              message="You have unsaved edits. Reloading from disk will discard them."
+              confirmLabel="Reload"
+              danger
+              onConfirm={() => { setShowReloadConfirm(false); reloadFromDisk(); }}
+              onCancel={() => setShowReloadConfirm(false)}
+            />
+          )}
+
+          {/* Item 1 — Navigation guard dialog */}
+          {state.pendingNavigation && saveState() !== "saved" && (
+            <ConfirmDialog
+              title="Discard unsaved changes?"
+              message="You have unsaved edits that will be lost if you navigate away."
+              confirmLabel="Discard"
+              danger
+              onConfirm={confirmNavigation}
+              onCancel={cancelNavigation}
             />
           )}
         </>

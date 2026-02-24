@@ -10,15 +10,34 @@
 }
 
 .metadata-body {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: var(--space-5);
   flex: 1;
+  min-height: 0;
+}
+
+/* Let the summary field grow to fill available vertical space */
+.metadata-body .metadata-field:has(.summary-wrapper) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.metadata-body .summary-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.metadata-body .summary-wrapper textarea {
+  flex: 1;
+  resize: none;
 }
 
 .metadata-footer {
   margin-top: auto;
   padding-top: var(--space-4);
-  border-top: var(--space-px) solid var(--color-border-subtle);
 }
 
 @keyframes fadeIn {
@@ -210,8 +229,8 @@
 }
 
 .status-badge.published {
-  color: var(--color-primary);
-  border-color: var(--color-primary);
+  color: var(--color-success);
+  border-color: var(--color-success);
 }
 
 /* --- Metadata row (inline label + value) --- */

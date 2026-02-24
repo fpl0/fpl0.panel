@@ -8,29 +8,59 @@ A high-fidelity management panel for `fpl0.io` built with Tauri and SolidJS. Opt
 
 - **Dev**: `npm run tauri dev` (Runs the Vite dev server and Tauri window)
 - **Build**: `npm run tauri build` (Packages the native executable)
-- **Check**: `npm run (bun) tsc --noEmit` (Type-checking)
+- **TS Check**: `npx tsc --noEmit` (TypeScript type-checking)
+- **Rust Check**: `cd src-tauri && cargo clippy --all-targets` (Rust linting)
 
 ## Architecture Guidelines
 
-### 1. The MDX Transformation Pipeline (`src/lib/mdx.ts`)
+### 1. The MDX Transformation Pipeline (`src/lib/mdx/`)
 
-The core of the application is the AST transformation engine. It handles bidirectional conversion between Markdown/MDX (MDAST) and ProseMirror JSON (TipTap):
+The core of the application is the AST transformation engine in `src/lib/mdx/`. It handles bidirectional conversion between Markdown/MDX (MDAST) and ProseMirror JSON (TipTap):
 
-- **Parse**: `remark-mdx` parses the raw file. Custom logic maps `mdxJsxFlowElement` and `mdxJsxTextElement` nodes to Tiptap-native nodes or the `passthroughBlock`.
-- **Serialize**: The editor's JSON is serialized back to Markdown + JSX strings. Imports are dynamically generated based on component usage to keep files clean.
+- **`parser.ts`**: `remark-mdx` parses raw files. Custom logic maps `mdxJsxFlowElement` and `mdxJsxTextElement` nodes to Tiptap-native nodes or the `passthroughBlock`.
+- **`serializer.ts`**: The editor's JSON is serialized back to Markdown + JSX strings. Uses a typed `attr()` helper for safe attribute access.
+- **`imports.ts`**: Dynamically generates import statements based on component usage.
+- **`frontmatter.ts`**: Splits/reassembles YAML frontmatter from MDX files.
+- **`types.ts`** / **`utils.ts`**: Shared MDAST type definitions and JSX serialization helpers.
 
 ### 2. Fine-Grained Reactivity (SolidJS)
 
 - Use **Signals** for local UI state.
 - TipTap is integrated imperatively in `onMount` because it lacks native SolidJS bindings. Use the `editorInstance` signal to expose the editor to floating components like the `BubbleToolbar`.
-- Central state (file listings, toasts, active entry) is managed in `src/lib/store.ts`.
+- Central state is modularized in `src/lib/stores/` (re-exported via `src/lib/store.ts`):
+  - **`state.ts`**: Core reactive store (`AppState`), view routing, config.
+  - **`navigation.ts`**: View transitions with an unsaved-changes guard (`pendingNavigation`).
+  - **`content.ts`**: CRUD operations (list, publish, unpublish, delete) via Tauri IPC.
+  - **`notifications.ts`**: Toast system with auto-dismiss, update-in-place, and early dismissal.
+  - **`watcher.ts`**: File-system change listener with suppression window to avoid self-triggered events.
+  - **`config.ts`** / **`theme.ts`** / **`search.ts`**: Config persistence, theme toggle, search modal state.
 
 ### 3. Custom Editor Nodes (`src/components/editor/`)
 
 Every complex MDX component (Figure, mermaid, LiteYouTube, Table) has a corresponding Tiptap Node implementation. 
 
 - **Atoms**: These nodes should be `atom: true` to prevent internal cursor focus unless explicitly editing.
-- **NodeViews**: Custom UI for these components is built with standard DOM APIs to avoid overhead within the ProseMirror view.
+- **NodeViews**: Custom UI for these components is built with standard DOM APIs to avoid overhead within the ProseMirror view. **Never use `innerHTML`** — always use `document.createElement` / `document.createElementNS` to construct SVG icons and other markup.
+
+### 4. Rust Backend (`src-tauri/src/`)
+
+The Tauri backend is split into focused modules:
+
+- **`commands.rs`**: Tauri IPC command handlers (the bridge between frontend and backend).
+- **`content.rs`**: Content CRUD — scanning directories, creating posts/apps, deleting entries.
+- **`frontmatter.rs`**: YAML frontmatter parsing, field extraction, and manipulation via regex.
+- **`git.rs`**: Git CLI wrappers for add/commit/push and status checks.
+- **`config.rs`**: App config persistence (JSON in the platform app-data directory).
+- **`security.rs`**: Path traversal prevention (`ensure_within`) and YAML string escaping.
+- **`types.rs`**: Shared data types serialized across the IPC boundary.
+
+All Rust error paths should use `format!("Failed to <action>: {e}")` for contextual error messages, not bare `.map_err(|e| e.to_string())`.
+
+### 5. Accessibility Patterns
+
+- **Dialogs**: Use `role="alertdialog"`, `aria-modal="true"`, `aria-labelledby`/`aria-describedby`. Include a focus trap (Tab cycling) and auto-focus the cancel button.
+- **Form fields**: Use `<label for="id">` with matching `id` on inputs, or `aria-label` for inputs without visible labels.
+- **Listboxes**: Use `role="combobox"` on the input, `role="listbox"` on the list, `role="option"` on items, and `aria-activedescendant` for keyboard navigation.
 
 ## Design Principles: The "True Ledger"
 

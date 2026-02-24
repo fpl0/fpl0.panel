@@ -4,8 +4,9 @@
  * Provides inline formatting: bold, italic, strikethrough, code, link, headings.
  * Link editing happens inline — the toolbar transforms into a URL input.
  */
-import { createSignal, onMount, onCleanup, Show, For } from "solid-js";
+
 import type { Editor } from "@tiptap/core";
+import { createSignal, For, onCleanup, onMount, Show, type JSX } from "solid-js";
 
 interface Props {
   editor: Editor;
@@ -14,7 +15,7 @@ interface Props {
 interface ToolbarButton {
   key: string;
   label: string;
-  icon: any;
+  icon: JSX.Element | string;
   shortcut?: string;
   isActive: () => boolean;
   action: () => void;
@@ -32,6 +33,8 @@ export function BubbleToolbar(props: Props) {
     const trimmed = url.trim();
     if (trimmed) {
       props.editor.chain().focus().setLink({ href: trimmed }).run();
+    } else {
+      props.editor.chain().focus().unsetLink().run();
     }
     setLinkEditing(false);
     setLinkUrl("");
@@ -87,12 +90,28 @@ export function BubbleToolbar(props: Props) {
     {
       key: "link",
       label: "Link",
-      icon: (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>),
+      icon: (
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+        </svg>
+      ),
       shortcut: "⌘K",
       isActive: () => props.editor.isActive("link"),
       action: () => {
         if (props.editor.isActive("link")) {
-          props.editor.chain().focus().unsetLink().run();
+          const href = props.editor.getAttributes("link").href || "";
+          setLinkUrl(href);
+          setLinkEditing(true);
           return;
         }
         setLinkUrl("");
@@ -126,16 +145,14 @@ export function BubbleToolbar(props: Props) {
     const { state, view } = props.editor;
     const { from, to } = state.selection;
 
-    if (from === to || !view.hasFocus()) {
+    // Hide when no selection range, no focus, or document is empty
+    if (from === to || !view.hasFocus() || state.doc.textContent.length === 0) {
       if (!linkEditing()) setVisible(false);
       return;
     }
 
     // Don't show in code blocks or atom nodes
-    if (
-      props.editor.isActive("codeBlock") ||
-      props.editor.isActive("mermaidDiagram")
-    ) {
+    if (props.editor.isActive("codeBlock") || props.editor.isActive("mermaidDiagram")) {
       setVisible(false);
       return;
     }
@@ -173,20 +190,23 @@ export function BubbleToolbar(props: Props) {
     }
   }
 
+  function handleBlur() {
+    setTimeout(() => {
+      if (!linkEditing()) setVisible(false);
+    }, 150);
+  }
+
   onMount(() => {
     props.editor.on("selectionUpdate", updatePosition);
-    props.editor.on("blur", () => {
-      // Delay hide to allow clicking inside the link input
-      setTimeout(() => {
-        if (!linkEditing()) setVisible(false);
-      }, 150);
-    });
+    props.editor.on("blur", handleBlur);
     props.editor.on("focus", updatePosition);
     document.addEventListener("keydown", handleGlobalEscape);
   });
 
   onCleanup(() => {
     props.editor.off("selectionUpdate", updatePosition);
+    props.editor.off("blur", handleBlur);
+    props.editor.off("focus", updatePosition);
     document.removeEventListener("keydown", handleGlobalEscape);
   });
 
@@ -213,6 +233,7 @@ export function BubbleToolbar(props: Props) {
                 type="text"
                 class="bubble-link-field"
                 placeholder="Paste or type URL..."
+                aria-label="Link URL"
                 value={linkUrl()}
                 onInput={(e) => setLinkUrl(e.currentTarget.value)}
                 onKeyDown={(e) => {
@@ -249,6 +270,7 @@ export function BubbleToolbar(props: Props) {
                     btn.action();
                   }}
                   onMouseDown={(e) => e.preventDefault()}
+                  aria-label={btn.shortcut ? `${btn.label} (${btn.shortcut})` : btn.label}
                   title={btn.shortcut ? `${btn.label} (${btn.shortcut})` : btn.label}
                 >
                   {btn.icon}

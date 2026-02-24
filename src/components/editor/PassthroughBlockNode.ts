@@ -3,7 +3,7 @@
  * Stores raw JSX/HTML that round-trips without modification.
  * Double-click to edit raw content in a textarea.
  */
-import { Node, mergeAttributes } from "@tiptap/core";
+import { mergeAttributes, Node } from "@tiptap/core";
 
 export const PassthroughBlockNode = Node.create({
   name: "passthroughBlock",
@@ -22,8 +22,7 @@ export const PassthroughBlockNode = Node.create({
 
   renderHTML({ HTMLAttributes }) {
     const content = HTMLAttributes.content || "";
-    const preview =
-      content.length > 80 ? `${content.slice(0, 80)}...` : content;
+    const preview = content.length > 80 ? `${content.slice(0, 80)}...` : content;
     return [
       "div",
       mergeAttributes(HTMLAttributes, {
@@ -39,6 +38,7 @@ export const PassthroughBlockNode = Node.create({
       let currentNode = initialNode;
       let editing = false;
       let textareaEl: HTMLTextAreaElement | null = null;
+      let editAbort: AbortController | null = null;
 
       const dom = document.createElement("div");
       dom.classList.add("passthrough-node");
@@ -55,7 +55,7 @@ export const PassthroughBlockNode = Node.create({
 
       const hint = document.createElement("span");
       hint.classList.add("embed-edit-hint");
-      hint.textContent = "Double-click to edit";
+      hint.textContent = "Click to edit";
       header.appendChild(hint);
 
       dom.appendChild(header);
@@ -80,11 +80,12 @@ export const PassthroughBlockNode = Node.create({
         textareaEl = document.createElement("textarea");
         textareaEl.classList.add("passthrough-textarea");
         textareaEl.value = currentNode.attrs.content || "";
-        textareaEl.placeholder = "<ComponentName prop=\"value\" />";
-        textareaEl.rows = Math.max(
-          3,
-          (currentNode.attrs.content || "").split("\n").length + 1,
-        );
+        textareaEl.placeholder = '<ComponentName prop="value" />';
+        textareaEl.setAttribute("aria-label", "Raw JSX content");
+        textareaEl.rows = Math.max(3, (currentNode.attrs.content || "").split("\n").length + 1);
+
+        editAbort = new AbortController();
+        const { signal } = editAbort;
 
         preview.style.display = "none";
         dom.appendChild(textareaEl);
@@ -93,22 +94,30 @@ export const PassthroughBlockNode = Node.create({
           textareaEl?.focus();
         }, 0);
 
-        textareaEl.addEventListener("keydown", (e) => {
-          if (e.key === "Escape") {
-            e.preventDefault();
-            cancelEdit();
-          }
-          // Cmd+Enter to save
-          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-            e.preventDefault();
-            finishEdit(textareaEl!.value);
-          }
-          e.stopPropagation();
-        });
+        textareaEl.addEventListener(
+          "keydown",
+          (e) => {
+            if (e.key === "Escape") {
+              e.preventDefault();
+              cancelEdit();
+            }
+            // Cmd+Enter to save
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+              e.preventDefault();
+              finishEdit(textareaEl!.value);
+            }
+            e.stopPropagation();
+          },
+          { signal },
+        );
 
-        textareaEl.addEventListener("blur", () => {
-          finishEdit(textareaEl?.value ?? "");
-        });
+        textareaEl.addEventListener(
+          "blur",
+          () => {
+            finishEdit(textareaEl?.value ?? "");
+          },
+          { signal },
+        );
       }
 
       function finishEdit(newContent: string) {
@@ -116,6 +125,8 @@ export const PassthroughBlockNode = Node.create({
         editing = false;
         dom.classList.remove("is-editing");
 
+        editAbort?.abort();
+        editAbort = null;
         if (textareaEl) {
           textareaEl.remove();
           textareaEl = null;
@@ -137,6 +148,8 @@ export const PassthroughBlockNode = Node.create({
       function cancelEdit() {
         editing = false;
         dom.classList.remove("is-editing");
+        editAbort?.abort();
+        editAbort = null;
         if (textareaEl) {
           textareaEl.remove();
           textareaEl = null;
@@ -145,7 +158,7 @@ export const PassthroughBlockNode = Node.create({
         editor.commands.focus();
       }
 
-      dom.addEventListener("dblclick", (e) => {
+      header.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
         startEdit();

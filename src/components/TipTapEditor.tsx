@@ -11,39 +11,39 @@
  * IMPORTANT: No window.prompt / window.alert / window.confirm — these are
  * disabled in Tauri's WebView.
  */
-import { onMount, onCleanup, createSignal, Show } from "solid-js";
-import { Editor } from "@tiptap/core";
-import StarterKit from "@tiptap/starter-kit";
-import Image from "@tiptap/extension-image";
-import Link from "@tiptap/extension-link";
-import { Table } from "@tiptap/extension-table";
-import { TableRow } from "@tiptap/extension-table-row";
-import { TableCell } from "@tiptap/extension-table-cell";
-import { TableHeader } from "@tiptap/extension-table-header";
-import Placeholder from "@tiptap/extension-placeholder";
-import Typography from "@tiptap/extension-typography";
-import HorizontalRule from "@tiptap/extension-horizontal-rule";
-import TaskList from "@tiptap/extension-task-list";
-import TaskItem from "@tiptap/extension-task-item";
-import Underline from "@tiptap/extension-underline";
-import Highlight from "@tiptap/extension-highlight";
-import Dropcursor from "@tiptap/extension-dropcursor";
-import Gapcursor from "@tiptap/extension-gapcursor";
-import CharacterCount from "@tiptap/extension-character-count";
-
-import { FigureNode } from "./editor/FigureNode";
-import { YouTubeEmbedNode } from "./editor/YouTubeEmbedNode";
-import { PassthroughBlockNode } from "./editor/PassthroughBlockNode";
-import { TwitterCardNode } from "./editor/TwitterCardNode";
-import { DetailsNode } from "./editor/DetailsNode";
-import { FootnoteRefNode } from "./editor/FootnoteRefNode";
-import { FootnoteDefNode } from "./editor/FootnoteDefNode";
-import { CodeBlockNode } from "./editor/CodeBlockNode";
-import { MermaidNode } from "./editor/MermaidNode";
-import { SlashCommandMenu } from "./editor/SlashCommandMenu";
-import { BubbleToolbar } from "./editor/BubbleToolbar";
 
 import type { JSONContent } from "@tiptap/core";
+import { Editor } from "@tiptap/core";
+import CharacterCount from "@tiptap/extension-character-count";
+import Dropcursor from "@tiptap/extension-dropcursor";
+import Gapcursor from "@tiptap/extension-gapcursor";
+import Highlight from "@tiptap/extension-highlight";
+import HorizontalRule from "@tiptap/extension-horizontal-rule";
+import Image from "@tiptap/extension-image";
+import Link from "@tiptap/extension-link";
+import Placeholder from "@tiptap/extension-placeholder";
+import { Table } from "@tiptap/extension-table";
+import { TableCell } from "@tiptap/extension-table-cell";
+import { TableHeader } from "@tiptap/extension-table-header";
+import { TableRow } from "@tiptap/extension-table-row";
+import TaskItem from "@tiptap/extension-task-item";
+import TaskList from "@tiptap/extension-task-list";
+import Typography from "@tiptap/extension-typography";
+import Underline from "@tiptap/extension-underline";
+import StarterKit from "@tiptap/starter-kit";
+import { createSignal, ErrorBoundary, onCleanup, onMount, Show } from "solid-js";
+import { BubbleToolbar } from "./editor/BubbleToolbar";
+import { CodeBlockNode } from "./editor/CodeBlockNode";
+import { DetailsNode } from "./editor/DetailsNode";
+import { FigureNode } from "./editor/FigureNode";
+import { FootnoteDefNode } from "./editor/FootnoteDefNode";
+import { FootnoteRefNode } from "./editor/FootnoteRefNode";
+import { MermaidNode } from "./editor/MermaidNode";
+import { PassthroughBlockNode } from "./editor/PassthroughBlockNode";
+import { SlashCommandMenu } from "./editor/SlashCommandMenu";
+import { TwitterCardNode } from "./editor/TwitterCardNode";
+import { YouTubeEmbedNode } from "./editor/YouTubeEmbedNode";
+import { DescriptionList, DescriptionTerm, DescriptionDetails } from "./editor/DefinitionList";
 
 interface Props {
   content: JSONContent;
@@ -72,10 +72,7 @@ export function TipTapEditor(props: Props) {
   } | null>(null);
 
   /** Show a one-line input bar above the editor. Returns the entered value or null on cancel. */
-  function promptInline(
-    placeholder: string,
-    initial = "",
-  ): Promise<string | null> {
+  function promptInline(placeholder: string, initial = ""): Promise<string | null> {
     return new Promise((resolve) => {
       setCmdBar({ placeholder, initial, resolve });
     });
@@ -125,7 +122,10 @@ export function TipTapEditor(props: Props) {
         TableCell,
         TableHeader,
         Placeholder.configure({
-          placeholder: 'Type "/" for commands…',
+          placeholder: ({ node }) => {
+            if (node.type.name === "heading") return "Give it a name…";
+            return "What's on your mind?";
+          },
         }),
         Typography,
         HorizontalRule,
@@ -149,6 +149,9 @@ export function TipTapEditor(props: Props) {
         FootnoteRefNode,
         FootnoteDefNode,
         MermaidNode,
+        DescriptionList,
+        DescriptionTerm,
+        DescriptionDetails,
 
         // Slash command menu
         SlashCommandMenu,
@@ -166,8 +169,9 @@ export function TipTapEditor(props: Props) {
       onSelectionUpdate: () => {
         updateCounts();
       },
-      onCreate: () => {
+      onCreate: ({ editor: e }) => {
         updateCounts();
+        e.commands.focus();
       },
     });
 
@@ -210,25 +214,27 @@ export function TipTapEditor(props: Props) {
                 }
               }}
             />
-            <span class="editor-cmd-hint">
-              Enter to confirm &middot; Esc to cancel
-            </span>
+            <span class="editor-cmd-hint">Enter to confirm &middot; Esc to cancel</span>
           </div>
         )}
       </Show>
 
       {/* Floating bubble toolbar — appears on text selection */}
-      <Show when={editorInstance()}>
-        {(ed) => (
-          <BubbleToolbar editor={ed()} />
-        )}
-      </Show>
+      <Show when={editorInstance()}>{(ed) => <BubbleToolbar editor={ed()} />}</Show>
 
       {/* Editor content area */}
-      <div class="editor-content">
-        <div ref={editorRef} />
-      </div>
-
+      <ErrorBoundary
+        fallback={(err) => (
+          <div class="content-empty">
+            <p>Editor crashed: {err.message}</p>
+            <p>Save your work and reload the application.</p>
+          </div>
+        )}
+      >
+        <div class="editor-content">
+          <div ref={editorRef} />
+        </div>
+      </ErrorBoundary>
     </div>
   );
 }

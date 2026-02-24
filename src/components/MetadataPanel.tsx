@@ -57,6 +57,7 @@ export function MetadataPanel(props: Props) {
         <div class="metadata-field">
           <textarea
             class="metadata-title-input"
+            aria-label="Title"
             value={props.entry.title}
             placeholder="Title..."
             rows={1}
@@ -70,6 +71,7 @@ export function MetadataPanel(props: Props) {
           <input
             class="metadata-slug"
             type="text"
+            aria-label="Slug"
             value={props.entry.slug}
             placeholder="slug..."
             onInput={(e) => props.onFieldChange("slug", e.currentTarget.value)}
@@ -78,13 +80,13 @@ export function MetadataPanel(props: Props) {
 
         {/* Summary */}
         <div class="metadata-field">
-          <span class="label">Summary</span>
+          <label class="label" for="meta-summary">Summary</label>
           <div class="summary-wrapper">
             <textarea
+              id="meta-summary"
               class="input"
               value={props.entry.summary}
               placeholder={`${SUMMARY_MIN}-${SUMMARY_MAX} characters`}
-              rows={7}
               onInput={(e) => props.onFieldChange("summary", e.currentTarget.value)}
             />
             <span class={`summary-counter ${summaryStatus(props.entry.summary.length)}`}>
@@ -95,7 +97,7 @@ export function MetadataPanel(props: Props) {
 
         {/* Tags */}
         <div class="metadata-field">
-          <span class="label">Tags</span>
+          <label class="label" for="meta-tags">Tags</label>
           <div class="tag-input-wrapper">
             <For each={tags()}>
               {(tag) => (
@@ -108,6 +110,7 @@ export function MetadataPanel(props: Props) {
               )}
             </For>
             <input
+              id="meta-tags"
               class="tag-input-field"
               type="text"
               placeholder="Add tag..."

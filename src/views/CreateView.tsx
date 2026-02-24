@@ -103,8 +103,8 @@ export function CreateView() {
 
       {/* Content type */}
       <div class="metadata-field create-field-lg">
-        <span class="label">Type</span>
-        <div class="filter-group">
+        <span class="label" id="create-type-label">Type</span>
+        <div class="filter-group" role="group" aria-labelledby="create-type-label">
           <button
             class={`filter-chip ${contentType() === "post" ? "active" : ""}`}
             onClick={() => setContentType("post")}
@@ -118,13 +118,19 @@ export function CreateView() {
             App
           </button>
         </div>
+        <p class="create-type-desc">
+          {contentType() === "post"
+            ? "A long-form MDX article with full editor support, metadata, and publishing workflow."
+            : "An interactive app entry with live iframe preview and VS Code integration."}
+        </p>
       </div>
 
       {/* Title */}
       <div class="metadata-field create-field">
-        <span class="label">Title</span>
+        <label class="label" for="create-title">Title</label>
         <textarea
           ref={titleRef}
+          id="create-title"
           class="metadata-title-input"
           placeholder="Your title..."
           value={title()}
@@ -140,8 +146,9 @@ export function CreateView() {
 
       {/* Slug */}
       <div class="metadata-field create-field">
-        <span class="label">Slug</span>
+        <label class="label" for="create-slug">Slug</label>
         <input
+          id="create-slug"
           class="input"
           type="text"
           placeholder="auto-generated-from-title"
@@ -152,9 +159,10 @@ export function CreateView() {
 
       {/* Summary */}
       <div class="metadata-field create-field">
-        <span class="label">Summary</span>
+        <label class="label" for="create-summary">Summary</label>
         <div class="summary-wrapper">
           <textarea
+            id="create-summary"
             class="input"
             placeholder={`${SUMMARY_MIN}-${SUMMARY_MAX} characters`}
             value={summary()}
@@ -169,7 +177,7 @@ export function CreateView() {
 
       {/* Tags */}
       <div class="metadata-field create-field-lg">
-        <span class="label">Tags</span>
+        <label class="label" for="create-tags">Tags</label>
         <div class="tag-input-wrapper">
           <For each={tags()}>
             {(tag) => (
@@ -182,6 +190,7 @@ export function CreateView() {
             )}
           </For>
           <input
+            id="create-tags"
             class="tag-input-field"
             type="text"
             placeholder="Add tag..."

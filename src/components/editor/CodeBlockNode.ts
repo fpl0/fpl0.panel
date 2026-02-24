@@ -2,11 +2,11 @@
  * TipTap custom node for code blocks with language selector and syntax highlighting.
  * Uses lowlight (highlight.js) for real-time token coloring via ProseMirror decorations.
  */
-import { Node, mergeAttributes, textblockTypeInputRule } from "@tiptap/core";
+import { mergeAttributes, Node, textblockTypeInputRule } from "@tiptap/core";
 import type { Node as PmNode } from "@tiptap/pm/model";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
-import { createLowlight, common } from "lowlight";
+import { common, createLowlight } from "lowlight";
 
 /* ── lowlight setup ─────────────────────────────────────── */
 
@@ -212,9 +212,7 @@ export const CodeBlockNode = Node.create({
           select.value = updatedNode.attrs.language || "";
           contentDOM.className = "code-block-code";
           if (updatedNode.attrs.language) {
-            contentDOM.classList.add(
-              `language-${updatedNode.attrs.language}`,
-            );
+            contentDOM.classList.add(`language-${updatedNode.attrs.language}`);
           }
           return true;
         },
@@ -231,7 +229,24 @@ export const CodeBlockNode = Node.create({
             return buildDecorations(doc);
           },
           apply(tr, decorations, _oldState, newState) {
-            if (tr.docChanged) return buildDecorations(newState.doc);
+            if (!tr.docChanged) return decorations.map(tr.mapping, newState.doc);
+
+            // Only rebuild if a code block was affected
+            let codeBlockChanged = false;
+            tr.steps.forEach((_step, i) => {
+              const map = tr.mapping.maps[i];
+              map.forEach((oldStart, oldEnd) => {
+                newState.doc.nodesBetween(
+                  tr.mapping.map(oldStart),
+                  Math.min(tr.mapping.map(oldEnd), newState.doc.content.size),
+                  (node) => {
+                    if (node.type.name === "codeBlock") codeBlockChanged = true;
+                  },
+                );
+              });
+            });
+
+            if (codeBlockChanged) return buildDecorations(newState.doc);
             return decorations.map(tr.mapping, newState.doc);
           },
         },
@@ -258,8 +273,7 @@ export const CodeBlockNode = Node.create({
 
   addKeyboardShortcuts() {
     return {
-      "Mod-Shift-c": () =>
-        this.editor.commands.toggleNode("codeBlock", "paragraph"),
+      "Mod-Shift-c": () => this.editor.commands.toggleNode("codeBlock", "paragraph"),
       Tab: ({ editor }) => {
         if (editor.isActive("codeBlock")) {
           editor.commands.insertContent("  ");

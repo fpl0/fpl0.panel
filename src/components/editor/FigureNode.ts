@@ -3,7 +3,7 @@
  * WYSIWYG preview with actual image, editable caption/label/alt.
  * Maps to the blog's Figure.astro component.
  */
-import { Node, mergeAttributes } from "@tiptap/core";
+import { mergeAttributes, Node } from "@tiptap/core";
 
 export const FigureNode = Node.create({
   name: "figure",
@@ -35,14 +35,7 @@ export const FigureNode = Node.create({
       }),
       ["img", { src, alt }],
       ...(caption || label
-        ? [
-            [
-              "figcaption",
-              {},
-              ...(label ? [["strong", {}, label], " "] : []),
-              caption || "",
-            ],
-          ]
+        ? [["figcaption", {}, ...(label ? [["strong", {}, label], " "] : []), caption || ""]]
         : []),
     ];
   },
@@ -52,6 +45,7 @@ export const FigureNode = Node.create({
       let currentNode = initialNode;
       let editing = false;
       let formContainer: HTMLDivElement | null = null;
+      let editAbort: AbortController | null = null;
 
       const dom = document.createElement("figure");
       dom.classList.add("figure-node");
@@ -124,6 +118,9 @@ export const FigureNode = Node.create({
         formContainer = document.createElement("div");
         formContainer.classList.add("figure-edit-form");
 
+        editAbort = new AbortController();
+        const { signal } = editAbort;
+
         const fields = [
           { key: "src", label: "Image URL", placeholder: "https://…" },
           { key: "alt", label: "Alt text", placeholder: "Describe the image…" },
@@ -149,6 +146,7 @@ export const FigureNode = Node.create({
           input.classList.add("embed-node-input");
           input.value = (currentNode.attrs[field.key] as string) || "";
           input.placeholder = field.placeholder;
+          input.setAttribute("aria-label", field.label);
           row.appendChild(input);
 
           inputs[field.key] = input;
@@ -161,18 +159,26 @@ export const FigureNode = Node.create({
         const saveBtn = document.createElement("button");
         saveBtn.classList.add("figure-edit-save");
         saveBtn.textContent = "Save";
-        saveBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          finishEdit(inputs);
-        });
+        saveBtn.addEventListener(
+          "click",
+          (e) => {
+            e.stopPropagation();
+            finishEdit(inputs);
+          },
+          { signal },
+        );
 
         const cancelBtn = document.createElement("button");
         cancelBtn.classList.add("figure-edit-cancel");
         cancelBtn.textContent = "Cancel";
-        cancelBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          cancelEdit();
-        });
+        cancelBtn.addEventListener(
+          "click",
+          (e) => {
+            e.stopPropagation();
+            cancelEdit();
+          },
+          { signal },
+        );
 
         actions.appendChild(saveBtn);
         actions.appendChild(cancelBtn);
@@ -184,17 +190,21 @@ export const FigureNode = Node.create({
         setTimeout(() => inputs.src.focus(), 0);
 
         // Keyboard shortcuts
-        formContainer.addEventListener("keydown", (e) => {
-          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-            e.preventDefault();
-            finishEdit(inputs);
-          }
-          if (e.key === "Escape") {
-            e.preventDefault();
-            cancelEdit();
-          }
-          e.stopPropagation();
-        });
+        formContainer.addEventListener(
+          "keydown",
+          (e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+              e.preventDefault();
+              finishEdit(inputs);
+            }
+            if (e.key === "Escape") {
+              e.preventDefault();
+              cancelEdit();
+            }
+            e.stopPropagation();
+          },
+          { signal },
+        );
       }
 
       function finishEdit(inputs: Record<string, HTMLInputElement>) {
@@ -207,19 +217,21 @@ export const FigureNode = Node.create({
           newAttrs[key] = input.value.trim();
         }
 
+        editAbort?.abort();
+        editAbort = null;
         formContainer?.remove();
         formContainer = null;
 
         const pos = typeof getPos === "function" ? getPos() : undefined;
         if (pos == null) return;
-        editor.view.dispatch(
-          editor.view.state.tr.setNodeMarkup(pos, undefined, newAttrs),
-        );
+        editor.view.dispatch(editor.view.state.tr.setNodeMarkup(pos, undefined, newAttrs));
       }
 
       function cancelEdit() {
         editing = false;
         dom.classList.remove("is-editing");
+        editAbort?.abort();
+        editAbort = null;
         formContainer?.remove();
         formContainer = null;
         editor.commands.focus();
@@ -243,8 +255,7 @@ export const FigureNode = Node.create({
       return {
         dom,
         stopEvent(event: Event) {
-          if (editing && formContainer?.contains(event.target as globalThis.Node))
-            return true;
+          if (editing && formContainer?.contains(event.target as globalThis.Node)) return true;
           return false;
         },
         update(updatedNode) {

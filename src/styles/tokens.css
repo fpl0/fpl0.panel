@@ -198,6 +198,8 @@
 
   --color-warn: oklch(0.65 0.15 80);
   --color-error: oklch(0.55 0.18 25);
+  --color-success: oklch(0.65 0.2 145);
+  --color-warn-surface: oklch(0.95 0.05 85);
 
   --color-border: oklch(0.88 0.02 var(--hue));
   --color-border-subtle: oklch(0.92 0.01 var(--hue));
@@ -315,6 +317,8 @@
 
   --color-warn: oklch(0.8 0.1 80);
   --color-error: oklch(0.7 0.12 25);
+  --color-success: oklch(0.7 0.18 145);
+  --color-warn-surface: oklch(0.25 0.04 85);
 
   --color-border: oklch(0.28 0.02 var(--hue));
   --color-border-subtle: oklch(0.24 0.015 var(--hue));

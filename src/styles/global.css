@@ -348,6 +348,9 @@ textarea.input:focus {
 }
 
 .toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
   padding: var(--space-3) var(--space-5);
   background: var(--color-surface);
   border: var(--ui-border);
@@ -359,6 +362,26 @@ textarea.input:focus {
   color: var(--color-text);
   pointer-events: auto;
   animation: toast-slide-up var(--duration-slow) var(--spring-soft);
+}
+
+.toast-message {
+  flex: 1;
+}
+
+.toast-dismiss {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: var(--font-size-body);
+  line-height: 1;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  transition: color var(--duration-normal) var(--ease-out);
+}
+
+.toast-dismiss:hover {
+  color: var(--color-text);
 }
 
 .toast-success {

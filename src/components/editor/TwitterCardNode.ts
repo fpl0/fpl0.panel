@@ -3,7 +3,7 @@
  * Styled preview card with X logo, tweet ID, and link.
  * Click card to edit tweet ID inline.
  */
-import { Node, mergeAttributes } from "@tiptap/core";
+import { mergeAttributes, Node } from "@tiptap/core";
 
 export const TwitterCardNode = Node.create({
   name: "twitterCard",
@@ -36,6 +36,7 @@ export const TwitterCardNode = Node.create({
       let currentNode = initialNode;
       let editing = false;
       let inputEl: HTMLInputElement | null = null;
+      let editAbort: AbortController | null = null;
 
       const dom = document.createElement("div");
       dom.classList.add("twitter-card-node");
@@ -46,7 +47,15 @@ export const TwitterCardNode = Node.create({
 
       const logo = document.createElement("span");
       logo.classList.add("tweet-node-logo");
-      logo.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" fill="currentColor"/></svg>`;
+      const logoSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      logoSvg.setAttribute("viewBox", "0 0 24 24");
+      logoSvg.setAttribute("width", "18");
+      logoSvg.setAttribute("height", "18");
+      const logoPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      logoPath.setAttribute("d", "M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z");
+      logoPath.setAttribute("fill", "currentColor");
+      logoSvg.appendChild(logoPath);
+      logo.appendChild(logoSvg);
       header.appendChild(logo);
 
       const label = document.createElement("span");
@@ -92,6 +101,10 @@ export const TwitterCardNode = Node.create({
         inputEl.classList.add("embed-node-input");
         inputEl.value = currentNode.attrs.id || "";
         inputEl.placeholder = "Tweet ID or URL…";
+        inputEl.setAttribute("aria-label", "Tweet ID or URL");
+
+        editAbort = new AbortController();
+        const { signal } = editAbort;
 
         label.style.display = "none";
         editHint.style.display = "none";
@@ -103,28 +116,34 @@ export const TwitterCardNode = Node.create({
           inputEl?.select();
         }, 0);
 
-        inputEl.addEventListener("keydown", (e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            finishEdit(inputEl!.value.trim());
-          }
-          if (e.key === "Escape") {
-            e.preventDefault();
-            cancelEdit();
-          }
-          e.stopPropagation();
-        });
+        inputEl.addEventListener(
+          "keydown",
+          (e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              finishEdit(inputEl!.value.trim());
+            }
+            if (e.key === "Escape") {
+              e.preventDefault();
+              cancelEdit();
+            }
+            e.stopPropagation();
+          },
+          { signal },
+        );
 
-        inputEl.addEventListener("blur", () => {
-          finishEdit(inputEl?.value.trim() ?? "");
-        });
+        inputEl.addEventListener(
+          "blur",
+          () => {
+            finishEdit(inputEl?.value.trim() ?? "");
+          },
+          { signal },
+        );
       }
 
       function extractTweetId(input: string): string {
         // Support pasting full Twitter/X URLs
-        const urlMatch = input.match(
-          /(?:twitter\.com|x\.com)\/\w+\/status\/(\d+)/,
-        );
+        const urlMatch = input.match(/(?:twitter\.com|x\.com)\/\w+\/status\/(\d+)/);
         if (urlMatch) return urlMatch[1];
         return input;
       }
@@ -136,6 +155,8 @@ export const TwitterCardNode = Node.create({
 
         const newId = extractTweetId(rawValue);
 
+        editAbort?.abort();
+        editAbort = null;
         if (inputEl) {
           inputEl.remove();
           inputEl = null;
@@ -159,6 +180,8 @@ export const TwitterCardNode = Node.create({
       function cancelEdit() {
         editing = false;
         dom.classList.remove("is-editing");
+        editAbort?.abort();
+        editAbort = null;
         if (inputEl) {
           inputEl.remove();
           inputEl = null;

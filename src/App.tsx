@@ -48,6 +48,13 @@ export function App() {
       return;
     }
 
+    // Cmd+/ — keyboard shortcuts (settings)
+    if (mod && e.key === "/") {
+      e.preventDefault();
+      navigate({ kind: "settings" });
+      return;
+    }
+
     // Cmd+L — back to content list
     if (mod && e.key === "l") {
       e.preventDefault();

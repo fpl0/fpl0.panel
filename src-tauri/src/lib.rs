@@ -1,7 +1,13 @@
 use tauri::Manager;
 
 mod commands;
+mod config;
+mod content;
 mod devserver;
+mod frontmatter;
+mod git;
+mod security;
+mod types;
 mod watcher;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

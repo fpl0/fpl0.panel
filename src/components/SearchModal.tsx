@@ -90,6 +90,11 @@ export function SearchModal() {
             placeholder="Search..."
             autocomplete="off"
             spellcheck={false}
+            role="combobox"
+            aria-expanded="true"
+            aria-controls="search-results-list"
+            aria-activedescendant={results().length > 0 ? `search-result-${selectedIndex()}` : undefined}
+            aria-label="Search content"
             value={query()}
             onInput={(e) => {
               setQuery(e.currentTarget.value);
@@ -101,7 +106,7 @@ export function SearchModal() {
           </div>
         </div>
 
-        <div class="search-results" role="listbox" aria-label="Search results">
+        <div class="search-results" role="listbox" id="search-results-list" aria-label="Search results">
           <Show
             when={results().length > 0}
             fallback={
@@ -114,6 +119,7 @@ export function SearchModal() {
               {(entry, i) => (
                 <div
                   class={`search-result ${i() === selectedIndex() ? "is-selected" : ""}`}
+                  id={`search-result-${i()}`}
                   role="option"
                   aria-selected={i() === selectedIndex()}
                   onClick={() => handleOpenEntry(entry)}

@@ -1,6 +1,7 @@
-import { createSignal, onMount, Show } from "solid-js";
+import { createSignal, createEffect, onMount, onCleanup, Show } from "solid-js";
 import type { ContentEntry } from "../lib/commands";
 import { openInVscode, readFile, writeFile } from "../lib/commands";
+import { setYamlField, splitFrontmatterFromContent } from "../lib/yaml";
 import {
   state,
   activeEntry,
@@ -25,6 +26,7 @@ export function AppDetailView(props: Props) {
   const [showUnpubConfirm, setShowUnpubConfirm] = createSignal(false);
   const [publishing, setPublishing] = createSignal(false);
   const [iframeError, setIframeError] = createSignal(false);
+  const [saveState, setSaveState] = createSignal<"saved" | "saving" | "unsaved">("saved");
 
   let iframeRef: HTMLIFrameElement | undefined;
 
@@ -35,6 +37,18 @@ export function AppDetailView(props: Props) {
     const e = activeEntry();
     if (!e) { navigate({ kind: "list" }); return; }
     filePath = e.file_path;
+  });
+
+  onCleanup(() => {
+    document.title = "fpl0.panel";
+  });
+
+  // Item 6 — Window title reflects current entry
+  createEffect(() => {
+    const entry = activeEntry();
+    if (entry) {
+      document.title = `${entry.title} — fpl0.panel`;
+    }
   });
 
   async function handlePublish() {
@@ -94,25 +108,22 @@ export function AppDetailView(props: Props) {
 
   async function handleMetadataChange(field: string, value: string) {
     if (!filePath) return;
-    const content = await readFile(filePath);
-    const fmMatch = content.match(/^(---\r?\n)([\s\S]*?)(\r?\n---)/);
-    if (!fmMatch) return;
+    setSaveState("saving");
+    try {
+      const content = await readFile(filePath);
+      const parts = splitFrontmatterFromContent(content);
+      if (!parts) { setSaveState("unsaved"); return; }
 
-    let yaml = fmMatch[2];
-    const rest = content.slice((fmMatch[0] as string).length);
-    const fieldRegex = new RegExp(`^${field}:.*$`, "m");
+      const yamlValue = field === "tags" ? value : `"${value}"`;
+      const newYaml = setYamlField(parts.yaml, field, yamlValue);
 
-    const yamlValue = field === "tags" ? value : `"${value}"`;
-
-    if (fieldRegex.test(yaml)) {
-      yaml = yaml.replace(fieldRegex, `${field}: ${yamlValue}`);
-    } else {
-      yaml += `\n${field}: ${yamlValue}`;
+      const newContent = `${parts.prefix}${newYaml}${parts.suffix}${parts.rest}`;
+      await writeFile(filePath, newContent);
+      await refreshEntries();
+      setSaveState("saved");
+    } catch {
+      setSaveState("unsaved");
     }
-
-    const newContent = `${fmMatch[1]}${yaml}${fmMatch[3]}${rest}`;
-    await writeFile(filePath, newContent);
-    await refreshEntries();
   }
 
   function reloadIframe() {

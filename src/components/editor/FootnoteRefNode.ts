@@ -2,7 +2,7 @@
  * TipTap inline atom node for footnote references [^n].
  * Renders as a superscript badge. Click to edit identifier inline.
  */
-import { Node, mergeAttributes } from "@tiptap/core";
+import { mergeAttributes, Node } from "@tiptap/core";
 
 export const FootnoteRefNode = Node.create({
   name: "footnoteRef",
@@ -36,6 +36,7 @@ export const FootnoteRefNode = Node.create({
       let currentNode = initialNode;
       let editing = false;
       let inputEl: HTMLInputElement | null = null;
+      let editAbort: AbortController | null = null;
 
       const dom = document.createElement("sup");
       dom.classList.add("footnote-ref-node");
@@ -51,7 +52,11 @@ export const FootnoteRefNode = Node.create({
         inputEl.classList.add("footnote-ref-input");
         inputEl.value = currentNode.attrs.identifier;
         inputEl.placeholder = "#";
+        inputEl.setAttribute("aria-label", "Footnote identifier");
         inputEl.size = 4;
+
+        editAbort = new AbortController();
+        const { signal } = editAbort;
 
         dom.textContent = "";
         dom.appendChild(inputEl);
@@ -60,27 +65,37 @@ export const FootnoteRefNode = Node.create({
           inputEl?.select();
         }, 0);
 
-        inputEl.addEventListener("keydown", (e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            finishEdit(inputEl!.value.trim());
-          }
-          if (e.key === "Escape") {
-            e.preventDefault();
-            cancelEdit();
-          }
-          e.stopPropagation();
-        });
+        inputEl.addEventListener(
+          "keydown",
+          (e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              finishEdit(inputEl!.value.trim());
+            }
+            if (e.key === "Escape") {
+              e.preventDefault();
+              cancelEdit();
+            }
+            e.stopPropagation();
+          },
+          { signal },
+        );
 
-        inputEl.addEventListener("blur", () => {
-          finishEdit(inputEl?.value.trim() ?? "");
-        });
+        inputEl.addEventListener(
+          "blur",
+          () => {
+            finishEdit(inputEl?.value.trim() ?? "");
+          },
+          { signal },
+        );
       }
 
       function finishEdit(newId: string) {
         if (!editing) return;
         editing = false;
         const value = newId || currentNode.attrs.identifier;
+        editAbort?.abort();
+        editAbort = null;
         if (inputEl) {
           inputEl.remove();
           inputEl = null;
@@ -101,6 +116,8 @@ export const FootnoteRefNode = Node.create({
 
       function cancelEdit() {
         editing = false;
+        editAbort?.abort();
+        editAbort = null;
         if (inputEl) {
           inputEl.remove();
           inputEl = null;
@@ -127,10 +144,7 @@ export const FootnoteRefNode = Node.create({
           currentNode = updatedNode;
           if (!editing) {
             dom.textContent = `[${updatedNode.attrs.identifier}]`;
-            dom.setAttribute(
-              "title",
-              `Footnote ${updatedNode.attrs.identifier}`,
-            );
+            dom.setAttribute("title", `Footnote ${updatedNode.attrs.identifier}`);
           }
           return true;
         },

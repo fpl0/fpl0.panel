@@ -3,6 +3,7 @@
  * fpl0_ logo on left, navigation links + theme toggle on right.
  * Uses blog's exact nav separators, mono-brand font, and rotating sun/moon.
  */
+import type { JSX } from "solid-js";
 import { state, navigate, toggleSearch, toggleTheme } from "../lib/store";
 
 export function TopBar() {
@@ -56,14 +57,14 @@ export function TopBar() {
  */
 interface DetailBarProps {
   title: string;
-  children?: any; // right-side actions
+  children?: JSX.Element;
 }
 
 export function DetailBar(props: DetailBarProps) {
   return (
     <div class="detail-bar">
       <div class="detail-bar-left">
-        <button class="back-link" onClick={() => navigate({ kind: "list" })}>
+        <button class="back-link" onClick={() => navigate({ kind: "list" })} aria-label="Back to content list">
           &larr; content
         </button>
       </div>

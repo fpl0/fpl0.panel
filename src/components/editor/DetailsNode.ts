@@ -3,7 +3,7 @@
  * Non-atomic: body content is editable via a content hole.
  * Click the summary header to edit its text inline.
  */
-import { Node, mergeAttributes } from "@tiptap/core";
+import { mergeAttributes, Node } from "@tiptap/core";
 
 export const DetailsNode = Node.create({
   name: "details",
@@ -42,6 +42,7 @@ export const DetailsNode = Node.create({
       let currentNode = initialNode;
       let editing = false;
       let inputEl: HTMLInputElement | null = null;
+      let editAbort: AbortController | null = null;
 
       const dom = document.createElement("div");
       dom.classList.add("details-node");
@@ -82,6 +83,10 @@ export const DetailsNode = Node.create({
         inputEl.classList.add("details-node-summary-input");
         inputEl.value = currentNode.attrs.summary;
         inputEl.placeholder = "Summary text…";
+        inputEl.setAttribute("aria-label", "Summary text");
+
+        editAbort = new AbortController();
+        const { signal } = editAbort;
 
         summaryText.style.display = "none";
         editHint.style.display = "none";
@@ -91,30 +96,40 @@ export const DetailsNode = Node.create({
           inputEl?.select();
         }, 0);
 
-        inputEl.addEventListener("keydown", (e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            finishEdit(inputEl!.value.trim());
-          }
-          if (e.key === "Escape") {
-            e.preventDefault();
-            cancelEdit();
-          }
-          e.stopPropagation();
-        });
+        inputEl.addEventListener(
+          "keydown",
+          (e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              finishEdit(inputEl!.value.trim());
+            }
+            if (e.key === "Escape") {
+              e.preventDefault();
+              cancelEdit();
+            }
+            e.stopPropagation();
+          },
+          { signal },
+        );
 
-        inputEl.addEventListener("blur", () => {
-          // Delay to avoid closing on transient focus changes
-          setTimeout(() => {
-            if (editing) finishEdit(inputEl?.value.trim() ?? "");
-          }, 150);
-        });
+        inputEl.addEventListener(
+          "blur",
+          () => {
+            // Delay to avoid closing on transient focus changes
+            setTimeout(() => {
+              if (editing) finishEdit(inputEl?.value.trim() ?? "");
+            }, 150);
+          },
+          { signal },
+        );
       }
 
       function finishEdit(newSummary: string) {
         if (!editing) return;
         editing = false;
         const value = newSummary || "Details";
+        editAbort?.abort();
+        editAbort = null;
         if (inputEl) {
           inputEl.remove();
           inputEl = null;
@@ -136,6 +151,8 @@ export const DetailsNode = Node.create({
 
       function cancelEdit() {
         editing = false;
+        editAbort?.abort();
+        editAbort = null;
         if (inputEl) {
           inputEl.remove();
           inputEl = null;

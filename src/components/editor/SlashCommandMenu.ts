@@ -3,7 +3,7 @@
  * Type "/" on an empty line to open a block picker.
  * Keyboard navigable (arrow keys + Enter), filterable.
  */
-import { Extension, type Editor, type ChainedCommands } from "@tiptap/core";
+import { type ChainedCommands, type Editor, Extension } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 
@@ -22,28 +22,36 @@ const SLASH_ITEMS: SlashMenuItem[] = [
     description: "Large section heading",
     icon: "H2",
     group: "Text",
-    command: (chain) => { chain.focus().toggleHeading({ level: 2 }).run(); },
+    command: (chain) => {
+      chain.focus().toggleHeading({ level: 2 }).run();
+    },
   },
   {
     title: "Heading 3",
     description: "Subsection heading",
     icon: "H3",
     group: "Text",
-    command: (chain) => { chain.focus().toggleHeading({ level: 3 }).run(); },
+    command: (chain) => {
+      chain.focus().toggleHeading({ level: 3 }).run();
+    },
   },
   {
     title: "Paragraph",
     description: "Plain text block",
     icon: "¶",
     group: "Text",
-    command: (chain) => { chain.focus().setParagraph().run(); },
+    command: (chain) => {
+      chain.focus().setParagraph().run();
+    },
   },
   {
     title: "Blockquote",
     description: "Quoted text block",
     icon: "\u201C",
     group: "Text",
-    command: (chain) => { chain.focus().toggleBlockquote().run(); },
+    command: (chain) => {
+      chain.focus().toggleBlockquote().run();
+    },
   },
 
   // --- Lists ---
@@ -52,21 +60,27 @@ const SLASH_ITEMS: SlashMenuItem[] = [
     description: "Unordered list",
     icon: "•",
     group: "Lists",
-    command: (chain) => { chain.focus().toggleBulletList().run(); },
+    command: (chain) => {
+      chain.focus().toggleBulletList().run();
+    },
   },
   {
     title: "Ordered List",
     description: "Numbered list",
     icon: "1.",
     group: "Lists",
-    command: (chain) => { chain.focus().toggleOrderedList().run(); },
+    command: (chain) => {
+      chain.focus().toggleOrderedList().run();
+    },
   },
   {
     title: "Task List",
     description: "Checklist with checkboxes",
     icon: "\u2610",
     group: "Lists",
-    command: (chain) => { chain.focus().toggleTaskList().run(); },
+    command: (chain) => {
+      chain.focus().toggleTaskList().run();
+    },
   },
 
   // --- Media ---
@@ -76,7 +90,10 @@ const SLASH_ITEMS: SlashMenuItem[] = [
     icon: "\u25A1",
     group: "Media",
     command: (chain) => {
-      chain.focus().insertContent({ type: "image", attrs: { src: "", alt: "", title: null } }).run();
+      chain
+        .focus()
+        .insertContent({ type: "image", attrs: { src: "", alt: "", title: null } })
+        .run();
     },
   },
   {
@@ -85,7 +102,13 @@ const SLASH_ITEMS: SlashMenuItem[] = [
     icon: "\u25A3",
     group: "Media",
     command: (chain) => {
-      chain.focus().insertContent({ type: "figure", attrs: { src: "", alt: "", caption: "", label: "", width: "", height: "" } }).run();
+      chain
+        .focus()
+        .insertContent({
+          type: "figure",
+          attrs: { src: "", alt: "", caption: "", label: "", width: "", height: "" },
+        })
+        .run();
     },
   },
   {
@@ -94,7 +117,10 @@ const SLASH_ITEMS: SlashMenuItem[] = [
     icon: "▶",
     group: "Media",
     command: (chain) => {
-      chain.focus().insertContent({ type: "youtubeEmbed", attrs: { videoId: "", title: "" } }).run();
+      chain
+        .focus()
+        .insertContent({ type: "youtubeEmbed", attrs: { videoId: "", title: "" } })
+        .run();
     },
   },
   {
@@ -103,7 +129,10 @@ const SLASH_ITEMS: SlashMenuItem[] = [
     icon: "X",
     group: "Media",
     command: (chain) => {
-      chain.focus().insertContent({ type: "twitterCard", attrs: { id: "" } }).run();
+      chain
+        .focus()
+        .insertContent({ type: "twitterCard", attrs: { id: "" } })
+        .run();
     },
   },
 
@@ -114,7 +143,10 @@ const SLASH_ITEMS: SlashMenuItem[] = [
     icon: "{ }",
     group: "Code",
     command: (chain) => {
-      chain.focus().insertContent({ type: "codeBlock", attrs: { language: null } }).run();
+      chain
+        .focus()
+        .insertContent({ type: "codeBlock", attrs: { language: null } })
+        .run();
     },
   },
   {
@@ -123,7 +155,13 @@ const SLASH_ITEMS: SlashMenuItem[] = [
     icon: "◇",
     group: "Code",
     command: (chain) => {
-      chain.focus().insertContent({ type: "mermaidDiagram", content: [{ type: "text", text: "graph TD\n  A[Start] --> B[End]" }] }).run();
+      chain
+        .focus()
+        .insertContent({
+          type: "mermaidDiagram",
+          content: [{ type: "text", text: "graph TD\n  A[Start] --> B[End]" }],
+        })
+        .run();
     },
   },
 
@@ -134,11 +172,14 @@ const SLASH_ITEMS: SlashMenuItem[] = [
     icon: "▸",
     group: "Layout",
     command: (chain) => {
-      chain.focus().insertContent({
-        type: "details",
-        attrs: { summary: "Details" },
-        content: [{ type: "paragraph" }],
-      }).run();
+      chain
+        .focus()
+        .insertContent({
+          type: "details",
+          attrs: { summary: "Details" },
+          content: [{ type: "paragraph" }],
+        })
+        .run();
     },
   },
   {
@@ -146,7 +187,9 @@ const SLASH_ITEMS: SlashMenuItem[] = [
     description: "Divider line",
     icon: "—",
     group: "Layout",
-    command: (chain) => { chain.focus().setHorizontalRule().run(); },
+    command: (chain) => {
+      chain.focus().setHorizontalRule().run();
+    },
   },
   {
     title: "Table",
@@ -195,7 +238,11 @@ export const SlashCommandMenu = Extension.create({
             // If the document changed and menu is active, update query
             if (prev.active && tr.docChanged && prev.range) {
               const text = tr.doc.textBetween(prev.range.from, tr.selection.$head.pos, "");
-              return { active: true, query: text.slice(1), range: { from: prev.range.from, to: tr.selection.$head.pos } };
+              return {
+                active: true,
+                query: text.slice(1),
+                range: { from: prev.range.from, to: tr.selection.$head.pos },
+              };
             }
             return prev;
           },
@@ -214,7 +261,10 @@ export const SlashCommandMenu = Extension.create({
                     const tr = view.state.tr.setMeta(slashMenuKey, {
                       active: true,
                       query: "",
-                      range: { from: view.state.selection.$from.pos - 1, to: view.state.selection.$from.pos },
+                      range: {
+                        from: view.state.selection.$from.pos - 1,
+                        to: view.state.selection.$from.pos,
+                      },
                     } satisfies SlashMenuState);
                     view.dispatch(tr);
                   }, 0);
@@ -225,7 +275,11 @@ export const SlashCommandMenu = Extension.create({
 
             // Menu is active
             if (event.key === "Escape") {
-              const tr = view.state.tr.setMeta(slashMenuKey, { active: false, query: "", range: null } satisfies SlashMenuState);
+              const tr = view.state.tr.setMeta(slashMenuKey, {
+                active: false,
+                query: "",
+                range: null,
+              } satisfies SlashMenuState);
               view.dispatch(tr);
               return true;
             }
@@ -235,153 +289,218 @@ export const SlashCommandMenu = Extension.create({
 
           decorations(state) {
             const pluginState = slashMenuKey.getState(state) as SlashMenuState | undefined;
-            if (!pluginState?.active || !pluginState.range) return DecorationSet.empty;
+            if (!(pluginState?.active && pluginState.range)) return DecorationSet.empty;
 
             // Create a widget decoration for the menu
-            const deco = Decoration.widget(pluginState.range.from, () => {
-              // Zero-size anchor so the absolutely-positioned menu
-              // is placed relative to the cursor, not .editor-view
-              const anchor = document.createElement("span");
-              anchor.style.position = "relative";
-              anchor.style.display = "inline-block";
-              anchor.style.width = "0";
-              anchor.style.height = "0";
-              anchor.style.overflow = "visible";
+            const deco = Decoration.widget(
+              pluginState.range.from,
+              () => {
+                // Zero-size anchor so the fixed-positioned menu
+                // can be attached to the DOM hierarchy but positioned globally
+                const anchor = document.createElement("span");
+                anchor.className = "slash-menu-anchor";
+                anchor.style.display = "inline-block";
+                anchor.style.width = "0";
+                anchor.style.height = "0";
+                anchor.style.overflow = "visible";
 
-              const menu = document.createElement("div");
-              menu.classList.add("slash-menu");
-              menu.setAttribute("data-query", pluginState.query || "");
-
-              const query = (pluginState.query || "").toLowerCase();
-              const filtered = SLASH_ITEMS.filter(
-                (item) =>
-                  item.title.toLowerCase().includes(query) ||
-                  item.description.toLowerCase().includes(query) ||
-                  item.group.toLowerCase().includes(query),
-              );
-
-              if (filtered.length === 0) {
-                const empty = document.createElement("div");
-                empty.classList.add("slash-menu-empty");
-                empty.textContent = "No results";
-                menu.appendChild(empty);
-                return menu;
-              }
-
-              let currentGroup = "";
-              let selectedIdx = 0;
-
-              filtered.forEach((item, idx) => {
-                if (item.group !== currentGroup) {
-                  currentGroup = item.group;
-                  const groupEl = document.createElement("div");
-                  groupEl.classList.add("slash-menu-group");
-                  groupEl.textContent = currentGroup;
-                  menu.appendChild(groupEl);
+                const menu = document.createElement("div");
+                menu.classList.add("slash-menu");
+                menu.setAttribute("role", "listbox");
+                menu.setAttribute("aria-label", "Block commands");
+                menu.setAttribute("data-query", pluginState.query || "");
+                if (pluginState.query) {
+                  menu.style.animation = "none";
                 }
 
-                const row = document.createElement("button");
-                row.classList.add("slash-menu-item");
-                if (idx === selectedIdx) row.classList.add("is-selected");
-                row.type = "button";
+                const itemsContainer = document.createElement("div");
+                itemsContainer.classList.add("slash-menu-items");
 
-                const icon = document.createElement("span");
-                icon.classList.add("slash-menu-icon");
-                icon.textContent = item.icon;
-                row.appendChild(icon);
+                const query = (pluginState.query || "").toLowerCase();
+                const filtered = SLASH_ITEMS.filter(
+                  (item) =>
+                    item.title.toLowerCase().includes(query) ||
+                    item.description.toLowerCase().includes(query) ||
+                    item.group.toLowerCase().includes(query),
+                );
 
-                const text = document.createElement("div");
-                text.classList.add("slash-menu-text");
+                if (filtered.length === 0) {
+                  const empty = document.createElement("div");
+                  empty.classList.add("slash-menu-empty");
+                  empty.textContent = "No results";
+                  itemsContainer.appendChild(empty);
+                  menu.appendChild(itemsContainer);
+                  return menu;
+                }
 
-                const title = document.createElement("span");
-                title.classList.add("slash-menu-title");
-                title.textContent = item.title;
-                text.appendChild(title);
+                let currentGroup = "";
+                let selectedIdx = 0;
 
-                const desc = document.createElement("span");
-                desc.classList.add("slash-menu-desc");
-                desc.textContent = item.description;
-                text.appendChild(desc);
-
-                row.appendChild(text);
-
-                row.addEventListener("mousedown", (e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-
-                  // Delete the "/" character and any query text
-                  const range = pluginState.range;
-                  if (range) {
-                    const view = editor.view;
-                    const tr = view.state.tr.delete(range.from, view.state.selection.$head.pos);
-                    tr.setMeta(slashMenuKey, { active: false, query: "", range: null } satisfies SlashMenuState);
-                    view.dispatch(tr);
+                filtered.forEach((item, idx) => {
+                  if (item.group !== currentGroup) {
+                    currentGroup = item.group;
+                    const groupEl = document.createElement("div");
+                    groupEl.classList.add("slash-menu-group");
+                    groupEl.textContent = currentGroup;
+                    itemsContainer.appendChild(groupEl);
                   }
 
-                  // Special case for footnote
-                  if (item.title === "Footnote") {
-                    insertFootnote(editor);
-                  } else {
-                    item.command(editor.chain());
-                  }
-                });
+                  const row = document.createElement("button");
+                  row.classList.add("slash-menu-item");
+                  if (idx === selectedIdx) row.classList.add("is-selected");
+                  row.type = "button";
+                  row.setAttribute("role", "option");
+                  if (idx === selectedIdx) row.setAttribute("aria-selected", "true");
 
-                menu.appendChild(row);
-              });
+                  const icon = document.createElement("span");
+                  icon.classList.add("slash-menu-icon");
+                  icon.textContent = item.icon;
+                  row.appendChild(icon);
 
-              // Keyboard navigation within the menu
-              function handleMenuKeyDown(e: KeyboardEvent) {
-                if (e.key === "ArrowDown") {
-                  e.preventDefault();
-                  selectedIdx = Math.min(selectedIdx + 1, filtered.length - 1);
-                  updateSelection();
-                } else if (e.key === "ArrowUp") {
-                  e.preventDefault();
-                  selectedIdx = Math.max(selectedIdx - 1, 0);
-                  updateSelection();
-                } else if (e.key === "Enter") {
-                  e.preventDefault();
-                  const selected = filtered[selectedIdx];
-                  if (selected) {
-                    const range = pluginState?.range;
+                  const text = document.createElement("div");
+                  text.classList.add("slash-menu-text");
+
+                  const title = document.createElement("span");
+                  title.classList.add("slash-menu-title");
+                  title.textContent = item.title;
+                  text.appendChild(title);
+
+                  const desc = document.createElement("span");
+                  desc.classList.add("slash-menu-desc");
+                  desc.textContent = item.description;
+                  text.appendChild(desc);
+
+                  row.appendChild(text);
+
+                  row.addEventListener("mousedown", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // Delete the "/" character and any query text
+                    const range = pluginState.range;
                     if (range) {
                       const view = editor.view;
                       const tr = view.state.tr.delete(range.from, view.state.selection.$head.pos);
-                      tr.setMeta(slashMenuKey, { active: false, query: "", range: null } satisfies SlashMenuState);
+                      tr.setMeta(slashMenuKey, {
+                        active: false,
+                        query: "",
+                        range: null,
+                      } satisfies SlashMenuState);
                       view.dispatch(tr);
                     }
-                    if (selected.title === "Footnote") {
+
+                    // Special case for footnote
+                    if (item.title === "Footnote") {
                       insertFootnote(editor);
                     } else {
-                      selected.command(editor.chain());
+                      item.command(editor.chain());
+                    }
+                  });
+
+                  itemsContainer.appendChild(row);
+                });
+
+                menu.appendChild(itemsContainer);
+
+                // Keyboard navigation within the menu
+                function handleMenuKeyDown(e: KeyboardEvent) {
+                  if (e.key === "ArrowDown") {
+                    e.preventDefault();
+                    selectedIdx = Math.min(selectedIdx + 1, filtered.length - 1);
+                    updateSelection();
+                  } else if (e.key === "ArrowUp") {
+                    e.preventDefault();
+                    selectedIdx = Math.max(selectedIdx - 1, 0);
+                    updateSelection();
+                  } else if (e.key === "Enter") {
+                    e.preventDefault();
+                    const selected = filtered[selectedIdx];
+                    if (selected) {
+                      const range = pluginState?.range;
+                      if (range) {
+                        const view = editor.view;
+                        const tr = view.state.tr.delete(range.from, view.state.selection.$head.pos);
+                        tr.setMeta(slashMenuKey, {
+                          active: false,
+                          query: "",
+                          range: null,
+                        } satisfies SlashMenuState);
+                        view.dispatch(tr);
+                      }
+                      if (selected.title === "Footnote") {
+                        insertFootnote(editor);
+                      } else {
+                        selected.command(editor.chain());
+                      }
+                    }
+                    document.removeEventListener("keydown", handleMenuKeyDown, true);
+                    menu.remove();
+                  }
+                }
+
+                function updateSelection() {
+                  const items = itemsContainer.querySelectorAll(".slash-menu-item");
+                  items.forEach((el, i) => {
+                    el.classList.toggle("is-selected", i === selectedIdx);
+                    el.setAttribute("aria-selected", i === selectedIdx ? "true" : "false");
+                  });
+                  const selected = items[selectedIdx] as HTMLElement | undefined;
+                  if (selected) {
+                    const top = selected.offsetTop;
+                    const bottom = top + selected.offsetHeight;
+                    const cHeight = itemsContainer.clientHeight;
+                    const cScroll = itemsContainer.scrollTop;
+
+                    if (top < cScroll) {
+                      itemsContainer.scrollTop = top - 8;
+                    } else if (bottom > cScroll + cHeight) {
+                      itemsContainer.scrollTop = bottom - cHeight + 8;
                     }
                   }
-                  document.removeEventListener("keydown", handleMenuKeyDown, true);
                 }
-              }
 
-              function updateSelection() {
-                menu.querySelectorAll(".slash-menu-item").forEach((el, i) => {
-                  el.classList.toggle("is-selected", i === selectedIdx);
-                  if (i === selectedIdx) el.scrollIntoView({ block: "nearest" });
-                });
-              }
+                // Attach keyboard listener
+                document.addEventListener("keydown", handleMenuKeyDown, true);
 
-              // Attach keyboard listener
-              document.addEventListener("keydown", handleMenuKeyDown, true);
+                // Keyboard hints footer
+                const footer = document.createElement("div");
+                footer.classList.add("slash-menu-footer");
+                footer.textContent = "↑↓ navigate · ↵ select · esc close";
+                menu.appendChild(footer);
 
-              // Cleanup on unmount
-              const observer = new MutationObserver(() => {
-                if (!menu.isConnected) {
-                  document.removeEventListener("keydown", handleMenuKeyDown, true);
-                  observer.disconnect();
+                document.body.appendChild(menu);
+
+                // Position the menu using fixed coordinates
+                function updateFixedPosition() {
+                  if (!anchor.isConnected) {
+                    menu.remove();
+                    document.removeEventListener("keydown", handleMenuKeyDown, true);
+                    return;
+                  }
+                  
+                  const rect = anchor.getBoundingClientRect();
+                  
+                  // Ensure basic fixed positioning
+                  menu.style.position = "fixed";
+                  menu.style.left = `${rect.left}px`;
+                  menu.style.top = `${rect.bottom + 4}px`; // Default below cursor
+                  menu.style.bottom = "auto";
+                  
+                  // Flip upwards if it clips the bottom of the viewport
+                  const mRect = menu.getBoundingClientRect();
+                  if (mRect.bottom > window.innerHeight - 10) {
+                    menu.style.top = `${rect.top - mRect.height - 4}px`;
+                  }
+                  
+                  requestAnimationFrame(updateFixedPosition);
                 }
-              });
-              observer.observe(menu.parentElement || document.body, { childList: true, subtree: true });
+                
+                requestAnimationFrame(updateFixedPosition);
 
-              anchor.appendChild(menu);
-              return anchor;
-            }, { side: -1 });
+                return anchor;
+              },
+              { side: -1 },
+            );
 
             return DecorationSet.create(state.doc, [deco]);
           },
@@ -399,11 +518,7 @@ export function insertFootnote(editor: Editor) {
   });
   const identifier = String(count + 1);
 
-  editor
-    .chain()
-    .focus()
-    .insertContent({ type: "footnoteRef", attrs: { identifier } })
-    .run();
+  editor.chain().focus().insertContent({ type: "footnoteRef", attrs: { identifier } }).run();
 
   const endPos = editor.state.doc.content.size;
   editor

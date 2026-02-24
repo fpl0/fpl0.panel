@@ -10,6 +10,7 @@ import type { HealthStatus } from "../lib/commands";
 
 type TypeFilter = "all" | "post" | "app";
 type StatusFilter = "all" | "draft" | "published";
+type SortBy = "created" | "modified";
 
 function relativeTime(dateStr: string): string {
   const now = Date.now();
@@ -32,6 +33,7 @@ function relativeTime(dateStr: string): string {
 export function ContentListView() {
   const [typeFilter, setTypeFilter] = createSignal<TypeFilter>("all");
   const [statusFilter, setStatusFilter] = createSignal<StatusFilter>("all");
+  const [sortBy, setSortBy] = createSignal<SortBy>("created");
   const [devHealth, setDevHealth] = createSignal<HealthStatus | null>(null);
   const [prodHealth, setProdHealth] = createSignal<HealthStatus | null>(null);
 
@@ -71,7 +73,7 @@ export function ContentListView() {
     return state.entries
       .filter((e) => e.is_draft && e.modified_date)
       .sort((a, b) => (b.modified_date ?? "").localeCompare(a.modified_date ?? ""))
-      .slice(0, 2);
+      .slice(0, 5);
   });
 
   // --- Filtered list ---
@@ -87,48 +89,44 @@ export function ContentListView() {
     } else if (sf === "published") {
       items = items.filter((e) => !e.is_draft);
     }
+    const sort = sortBy();
+    items = [...items].sort((a, b) => {
+      const dateA = sort === "modified" ? (a.modified_date ?? a.created_date) : a.created_date;
+      const dateB = sort === "modified" ? (b.modified_date ?? b.created_date) : b.created_date;
+      return dateB.localeCompare(dateA);
+    });
     return items;
   });
 
-  // --- Filter counts ---
-  const typeAllCount = createMemo(() => {
+  // --- Filter counts (single pass over entries) ---
+  const filterCounts = createMemo(() => {
     const sf = statusFilter();
-    let items = state.entries;
-    if (sf === "draft") items = items.filter((e) => e.is_draft);
-    else if (sf === "published") items = items.filter((e) => !e.is_draft);
-    return items.length;
-  });
-  const typePostCount = createMemo(() => {
-    const sf = statusFilter();
-    let items = state.entries.filter((e) => e.content_type === "post");
-    if (sf === "draft") items = items.filter((e) => e.is_draft);
-    else if (sf === "published") items = items.filter((e) => !e.is_draft);
-    return items.length;
-  });
-  const typeAppCount = createMemo(() => {
-    const sf = statusFilter();
-    let items = state.entries.filter((e) => e.content_type === "app");
-    if (sf === "draft") items = items.filter((e) => e.is_draft);
-    else if (sf === "published") items = items.filter((e) => !e.is_draft);
-    return items.length;
-  });
-  const statusAllCount = createMemo(() => {
     const tf = typeFilter();
-    let items = state.entries;
-    if (tf !== "all") items = items.filter((e) => e.content_type === tf);
-    return items.length;
-  });
-  const statusDraftCount = createMemo(() => {
-    const tf = typeFilter();
-    let items = state.entries.filter((e) => e.is_draft);
-    if (tf !== "all") items = items.filter((e) => e.content_type === tf);
-    return items.length;
-  });
-  const statusPublishedCount = createMemo(() => {
-    const tf = typeFilter();
-    let items = state.entries.filter((e) => !e.is_draft);
-    if (tf !== "all") items = items.filter((e) => e.content_type === tf);
-    return items.length;
+    let typeAll = 0, typePost = 0, typeApp = 0;
+    let statusAll = 0, statusDraft = 0, statusPublished = 0;
+
+    for (const e of state.entries) {
+      const isPost = e.content_type === "post";
+      const isApp = e.content_type === "app";
+      const isDraft = e.is_draft;
+      const matchesStatus = sf === "all" || (sf === "draft" ? isDraft : !isDraft);
+      const matchesType = tf === "all" || e.content_type === tf;
+
+      // Type counts (filtered by current status)
+      if (matchesStatus) {
+        typeAll++;
+        if (isPost) typePost++;
+        if (isApp) typeApp++;
+      }
+      // Status counts (filtered by current type)
+      if (matchesType) {
+        statusAll++;
+        if (isDraft) statusDraft++;
+        else statusPublished++;
+      }
+    }
+
+    return { typeAll, typePost, typeApp, statusAll, statusDraft, statusPublished };
   });
 
   function formatDate(dateStr: string): string {
@@ -167,12 +165,14 @@ export function ContentListView() {
             <div class="dash-sidebar-label">Health</div>
             <div class="dash-health-list">
               <div class="dash-health-item">
-                <span class={`dash-health-dot ${devHealth()?.ok ? "up" : "down"}`} />
+                <span class={`dash-health-dot ${devHealth()?.ok ? "up" : "down"}`} title={devHealth()?.ok ? "Server is up" : "Server is down"} />
                 <a class="dash-health-link" href="http://localhost:4321" target="_blank" rel="noopener noreferrer">Dev Server</a>
+                <span class="dash-health-status">{devHealth()?.ok ? "up" : "down"}</span>
               </div>
               <div class="dash-health-item">
-                <span class={`dash-health-dot ${prodHealth()?.ok ? "up" : "down"}`} />
+                <span class={`dash-health-dot ${prodHealth()?.ok ? "up" : "down"}`} title={prodHealth()?.ok ? "Server is up" : "Server is down"} />
                 <a class="dash-health-link" href="https://fpl0.io" target="_blank" rel="noopener noreferrer">fpl0.io</a>
+                <span class="dash-health-status">{prodHealth()?.ok ? "up" : "down"}</span>
               </div>
             </div>
           </div>
@@ -223,19 +223,19 @@ export function ContentListView() {
                 class={`filter-chip ${typeFilter() === "all" ? "active" : ""}`}
                 onClick={() => setTypeFilter("all")}
               >
-                All <span class="filter-count">({typeAllCount()})</span>
+                All <span class="filter-count">({filterCounts().typeAll})</span>
               </button>
               <button
                 class={`filter-chip ${typeFilter() === "post" ? "active" : ""}`}
                 onClick={() => setTypeFilter("post")}
               >
-                Posts <span class="filter-count">({typePostCount()})</span>
+                Posts <span class="filter-count">({filterCounts().typePost})</span>
               </button>
               <button
                 class={`filter-chip ${typeFilter() === "app" ? "active" : ""}`}
                 onClick={() => setTypeFilter("app")}
               >
-                Apps <span class="filter-count">({typeAppCount()})</span>
+                Apps <span class="filter-count">({filterCounts().typeApp})</span>
               </button>
             </div>
 
@@ -244,19 +244,34 @@ export function ContentListView() {
                 class={`filter-chip ${statusFilter() === "all" ? "active" : ""}`}
                 onClick={() => setStatusFilter("all")}
               >
-                All <span class="filter-count">({statusAllCount()})</span>
+                All <span class="filter-count">({filterCounts().statusAll})</span>
               </button>
               <button
                 class={`filter-chip ${statusFilter() === "draft" ? "active" : ""}`}
                 onClick={() => setStatusFilter("draft")}
               >
-                Draft <span class="filter-count">({statusDraftCount()})</span>
+                Draft <span class="filter-count">({filterCounts().statusDraft})</span>
               </button>
               <button
                 class={`filter-chip ${statusFilter() === "published" ? "active" : ""}`}
                 onClick={() => setStatusFilter("published")}
               >
-                Published <span class="filter-count">({statusPublishedCount()})</span>
+                Published <span class="filter-count">({filterCounts().statusPublished})</span>
+              </button>
+            </div>
+
+            <div class="filter-group">
+              <button
+                class={`filter-chip ${sortBy() === "created" ? "active" : ""}`}
+                onClick={() => setSortBy("created")}
+              >
+                Created
+              </button>
+              <button
+                class={`filter-chip ${sortBy() === "modified" ? "active" : ""}`}
+                onClick={() => setSortBy("modified")}
+              >
+                Modified
               </button>
             </div>
           </div>
@@ -276,7 +291,7 @@ export function ContentListView() {
                   <li class="post-item">
                     <div class="post-date-col">
                       <span class={`post-status-dot ${entry.is_draft ? "draft" : "published"}`} />
-                      <span class="post-date">{formatDate(entry.created_date)}</span>
+                      <span class="post-date">{formatDate(sortBy() === "modified" ? (entry.modified_date ?? entry.created_date) : entry.created_date)}</span>
                     </div>
                     <div class="post-content">
                       <span class="post-title" onClick={() => openEntry(entry)}>{entry.title}</span>

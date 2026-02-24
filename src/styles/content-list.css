@@ -85,14 +85,14 @@
 }
 
 .dash-health-dot {
-  width: 6px;
-  height: 6px;
+  width: var(--space-2);
+  height: var(--space-2);
   border-radius: var(--radius-round);
   flex-shrink: 0;
 }
 
 .dash-health-dot.up {
-  background: oklch(0.65 0.2 145);
+  background: var(--color-success);
 }
 
 .dash-health-dot.down {
@@ -112,6 +112,15 @@
 .dash-health-link:hover {
   color: var(--color-primary);
   text-decoration: underline;
+}
+
+.dash-health-status {
+  font-family: var(--font-mono-brand);
+  font-size: var(--font-size-micro);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-loose);
+  color: var(--color-text-muted);
+  margin-left: auto;
 }
 
 .dash-activity-tag {
@@ -305,7 +314,7 @@
 }
 
 .post-status-dot.published {
-  background: var(--color-primary);
+  background: var(--color-success);
 }
 
 .post-date {

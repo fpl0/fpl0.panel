@@ -3,7 +3,7 @@
  * WYSIWYG preview with YouTube thumbnail, title overlay, and play button.
  * Click the overlay to edit videoId/title inline.
  */
-import { Node, mergeAttributes } from "@tiptap/core";
+import { mergeAttributes, Node } from "@tiptap/core";
 
 export const YouTubeEmbedNode = Node.create({
   name: "youtubeEmbed",
@@ -37,6 +37,7 @@ export const YouTubeEmbedNode = Node.create({
       let currentNode = initialNode;
       let editing = false;
       let inputContainer: HTMLDivElement | null = null;
+      let editAbort: AbortController | null = null;
 
       // --- Root container ---
       const dom = document.createElement("div");
@@ -50,7 +51,17 @@ export const YouTubeEmbedNode = Node.create({
       // Play button
       const playBtn = document.createElement("div");
       playBtn.classList.add("yt-play-btn");
-      playBtn.innerHTML = `<svg viewBox="0 0 68 48"><path d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55C3.97 2.33 2.27 4.81 1.48 7.74.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z" fill="#c00"/><path d="M45 24 27 14v20" fill="#fff"/></svg>`;
+      const playSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      playSvg.setAttribute("viewBox", "0 0 68 48");
+      const bgPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      bgPath.setAttribute("d", "M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55C3.97 2.33 2.27 4.81 1.48 7.74.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z");
+      bgPath.setAttribute("fill", "#c00");
+      const triPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      triPath.setAttribute("d", "M45 24 27 14v20");
+      triPath.setAttribute("fill", "#fff");
+      playSvg.appendChild(bgPath);
+      playSvg.appendChild(triPath);
+      playBtn.appendChild(playSvg);
       preview.appendChild(playBtn);
 
       // Title overlay
@@ -61,7 +72,10 @@ export const YouTubeEmbedNode = Node.create({
       // --- Edit overlay (appears on click) ---
       const editOverlay = document.createElement("div");
       editOverlay.classList.add("yt-edit-overlay");
-      editOverlay.innerHTML = `<span class="embed-edit-hint">Click to edit</span>`;
+      const editHintSpan = document.createElement("span");
+      editHintSpan.classList.add("embed-edit-hint");
+      editHintSpan.textContent = "Click to edit";
+      editOverlay.appendChild(editHintSpan);
       preview.appendChild(editOverlay);
 
       function updatePreview() {
@@ -87,17 +101,22 @@ export const YouTubeEmbedNode = Node.create({
         inputContainer = document.createElement("div");
         inputContainer.classList.add("yt-edit-form");
 
+        editAbort = new AbortController();
+        const { signal } = editAbort;
+
         const idInput = document.createElement("input");
         idInput.type = "text";
         idInput.classList.add("embed-node-input");
         idInput.value = currentNode.attrs.videoId || "";
         idInput.placeholder = "Video ID or YouTube URL…";
+        idInput.setAttribute("aria-label", "Video ID or YouTube URL");
 
         const titleInput = document.createElement("input");
         titleInput.type = "text";
         titleInput.classList.add("embed-node-input");
         titleInput.value = currentNode.attrs.title || "";
         titleInput.placeholder = "Title (optional)…";
+        titleInput.setAttribute("aria-label", "Video title");
 
         const hint = document.createElement("span");
         hint.classList.add("embed-edit-hint");
@@ -116,10 +135,7 @@ export const YouTubeEmbedNode = Node.create({
         function handleKeyDown(e: KeyboardEvent) {
           if (e.key === "Enter") {
             e.preventDefault();
-            finishEdit(
-              extractVideoId(idInput.value.trim()),
-              titleInput.value.trim(),
-            );
+            finishEdit(extractVideoId(idInput.value.trim()), titleInput.value.trim());
           }
           if (e.key === "Escape") {
             e.preventDefault();
@@ -128,8 +144,8 @@ export const YouTubeEmbedNode = Node.create({
           e.stopPropagation();
         }
 
-        idInput.addEventListener("keydown", handleKeyDown);
-        titleInput.addEventListener("keydown", handleKeyDown);
+        idInput.addEventListener("keydown", handleKeyDown, { signal });
+        titleInput.addEventListener("keydown", handleKeyDown, { signal });
       }
 
       function extractVideoId(input: string): string {
@@ -146,13 +162,12 @@ export const YouTubeEmbedNode = Node.create({
         if (!editing) return;
         editing = false;
         dom.classList.remove("is-editing");
+        editAbort?.abort();
+        editAbort = null;
         inputContainer?.remove();
         inputContainer = null;
 
-        if (
-          newVideoId !== currentNode.attrs.videoId ||
-          newTitle !== currentNode.attrs.title
-        ) {
+        if (newVideoId !== currentNode.attrs.videoId || newTitle !== currentNode.attrs.title) {
           const pos = typeof getPos === "function" ? getPos() : undefined;
           if (pos == null) return;
           editor.view.dispatch(
@@ -168,6 +183,8 @@ export const YouTubeEmbedNode = Node.create({
       function cancelEdit() {
         editing = false;
         dom.classList.remove("is-editing");
+        editAbort?.abort();
+        editAbort = null;
         inputContainer?.remove();
         inputContainer = null;
         editor.commands.focus();
@@ -190,8 +207,7 @@ export const YouTubeEmbedNode = Node.create({
       return {
         dom,
         stopEvent(event: Event) {
-          if (editing && inputContainer?.contains(event.target as globalThis.Node))
-            return true;
+          if (editing && inputContainer?.contains(event.target as globalThis.Node)) return true;
           return false;
         },
         update(updatedNode) {
