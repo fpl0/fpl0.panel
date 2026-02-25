@@ -1,15 +1,18 @@
 use std::fs;
 use std::path::Path;
 use std::process::Command;
-use std::time::Duration;
 use tauri::Manager;
 
+use crate::cloudflare;
 use crate::config;
 use crate::content;
 use crate::frontmatter;
 use crate::git;
 use crate::security;
 use crate::types::*;
+
+/// Shared HTTP client — reuses connections across all Cloudflare + health check calls.
+pub struct HttpClient(pub reqwest::Client);
 
 // ---------------------------------------------------------------------------
 // Config commands
@@ -194,7 +197,7 @@ pub fn open_in_vscode(path: String) -> Result<(), String> {
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
-pub async fn check_url_health(url: String) -> Result<HealthStatus, String> {
+pub async fn check_url_health(app: tauri::AppHandle, url: String) -> Result<HealthStatus, String> {
     if !url.starts_with("http://") && !url.starts_with("https://") {
         return Err("Only HTTP(S) URLs are allowed".to_string());
     }
@@ -211,10 +214,7 @@ pub async fn check_url_health(url: String) -> Result<HealthStatus, String> {
         return Err("Requests to local/private addresses are not allowed".to_string());
     }
 
-    let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(5))
-        .build()
-        .map_err(|e| e.to_string())?;
+    let client = &app.state::<HttpClient>().0;
 
     match client.head(&url).send().await {
         Ok(resp) => {
@@ -257,4 +257,87 @@ pub fn start_dev_server(app: tauri::AppHandle, repo_path: String) -> Result<(), 
 pub fn stop_dev_server(app: tauri::AppHandle) -> Result<(), String> {
     let state = app.state::<crate::devserver::DevServerState>();
     crate::devserver::stop_dev_server(&state)
+}
+
+// ---------------------------------------------------------------------------
+// Cloudflare
+// ---------------------------------------------------------------------------
+
+#[tauri::command]
+pub async fn fetch_last_deployment(app: tauri::AppHandle) -> Result<CfDeploymentInfo, String> {
+    let cfg = config::load_config(&app);
+    let account_id = cfg
+        .cf_account_id
+        .as_deref()
+        .ok_or("Cloudflare account ID not configured")?;
+    let project_name = cfg
+        .cf_project_name
+        .as_deref()
+        .ok_or("Cloudflare project name not configured")?;
+    let api_token = cfg
+        .cf_api_token
+        .as_deref()
+        .ok_or("Cloudflare API token not configured")?;
+    let client = &app.state::<HttpClient>().0;
+
+    cloudflare::fetch_last_deployment(client, account_id, project_name, api_token).await
+}
+
+#[tauri::command]
+pub async fn fetch_analytics(app: tauri::AppHandle, days: u32, engagement: bool) -> Result<CfAnalytics, String> {
+    let mut cfg = config::load_config(&app);
+    let api_token = cfg
+        .cf_api_token
+        .as_deref()
+        .ok_or("Cloudflare API token not configured")?
+        .to_string();
+    let client = &app.state::<HttpClient>().0;
+
+    // Auto-discover zone_id if missing
+    let zone_id = match cfg.cf_zone_id.as_deref() {
+        Some(id) if !id.is_empty() => id.to_string(),
+        _ => {
+            let domain = cfg
+                .cf_domain
+                .as_deref()
+                .ok_or("Cloudflare domain not configured")?;
+            let id = cloudflare::fetch_zone_id(client, &api_token, domain).await?;
+            // Cache the discovered zone_id
+            cfg.cf_zone_id = Some(id.clone());
+            config::save_config(&app, &cfg)?;
+            id
+        }
+    };
+
+    cloudflare::fetch_analytics(client, &api_token, &zone_id, days, engagement).await
+}
+
+#[tauri::command]
+pub async fn test_cf_connection(app: tauri::AppHandle) -> Result<String, String> {
+    let cfg = config::load_config(&app);
+    let api_token = cfg
+        .cf_api_token
+        .as_deref()
+        .ok_or("Cloudflare API token not configured")?;
+    let account_id = cfg
+        .cf_account_id
+        .as_deref()
+        .ok_or("Cloudflare account ID not configured")?;
+    let project_name = cfg
+        .cf_project_name
+        .as_deref()
+        .ok_or("Cloudflare project name not configured")?;
+    let client = &app.state::<HttpClient>().0;
+
+    // Validate zone lookup if domain is set
+    if let Some(domain) = cfg.cf_domain.as_deref() {
+        if !domain.is_empty() {
+            cloudflare::fetch_zone_id(client, api_token, domain).await?;
+        }
+    }
+
+    // Validate deployment access
+    cloudflare::fetch_last_deployment(client, account_id, project_name, api_token).await?;
+
+    Ok("Connection successful — deployment data accessible.".to_string())
 }

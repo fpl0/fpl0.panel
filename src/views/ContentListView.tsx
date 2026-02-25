@@ -4,9 +4,10 @@
  * then the full filterable ledger list.
  */
 import { createSignal, createMemo, For, Show, onMount, onCleanup } from "solid-js";
-import { state, openEntry } from "../lib/store";
+import { state, openEntry, navigate } from "../lib/store";
 import { checkUrlHealth, DEV_SERVER_ORIGIN } from "../lib/commands";
-import type { HealthStatus } from "../lib/commands";
+import type { HealthStatus, CfDeploymentInfo } from "../lib/commands";
+import { getCachedDeployment, refreshDeployment, getCachedAnalytics } from "../lib/stores/cfcache";
 
 type TypeFilter = "all" | "post" | "app";
 type StatusFilter = "all" | "draft" | "published";
@@ -50,23 +51,30 @@ export function ContentListView() {
   });
   onCleanup(() => clearInterval(healthInterval));
 
+  // --- Cloudflare deployment polling ---
+  const cfConfigured = () =>
+    !!(state.config.cf_account_id && state.config.cf_project_name && state.config.cf_api_token);
+
+  const [deployment, setDeployment] = createSignal<CfDeploymentInfo | null>(null);
+  const [weeklyTraffic, setWeeklyTraffic] = createSignal<number | null>(null);
+
+  let deployInterval: ReturnType<typeof setInterval>;
+  onMount(() => {
+    if (!cfConfigured()) return;
+    // Serve cached data instantly, refresh in background if stale
+    getCachedDeployment(setDeployment);
+    getCachedAnalytics(7, true, (a) => setWeeklyTraffic(a.total_requests));
+    // Poll deployment on interval (refreshes cache)
+    deployInterval = setInterval(() => {
+      refreshDeployment().then((d) => { if (d) setDeployment(d); });
+    }, 60_000);
+  });
+  onCleanup(() => clearInterval(deployInterval));
+
   // --- Stats ---
   const totalCount = createMemo(() => state.entries.length);
   const publishedCount = createMemo(() => state.entries.filter((e) => !e.is_draft).length);
   const draftCount = createMemo(() => state.entries.filter((e) => e.is_draft).length);
-
-  const lastPublished = createMemo(() => {
-    const published = state.entries
-      .filter((e) => !e.is_draft && e.publication_date)
-      .sort((a, b) => (b.publication_date ?? "").localeCompare(a.publication_date ?? ""));
-    if (published.length === 0) return null;
-    try {
-      const d = new Date(published[0].publication_date!);
-      return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-    } catch {
-      return published[0].publication_date;
-    }
-  });
 
   // --- Continue Working (recent drafts) ---
   const recentDrafts = createMemo(() => {
@@ -177,12 +185,50 @@ export function ContentListView() {
             </div>
           </div>
 
-          <Show when={lastPublished()}>
+          <div class="dash-sidebar-section">
+            <div class="dash-sidebar-label">Deployment</div>
+            <Show
+              when={cfConfigured()}
+              fallback={
+                <span class="dash-deploy-configure" onClick={() => navigate({ kind: "settings" })}>
+                  Configure
+                </span>
+              }
+            >
+              <Show when={deployment()} fallback={<span class="dash-deploy-loading">Checking...</span>}>
+                {(dep) => (
+                  <>
+                    <div class="dash-health-item">
+                      <span class={`dash-health-dot ${dep().status === "success" ? "up" : "down"}`} />
+                      <span class="dash-health-text">Production</span>
+                      <span class="dash-health-status">{relativeTime(dep().deployed_at)}</span>
+                    </div>
+                    <Show when={dep().commit_message}>
+                      <div class="dash-deploy-commit" title={dep().commit_message!}>
+                        {dep().commit_message!.length > 40
+                          ? dep().commit_message!.slice(0, 40) + "..."
+                          : dep().commit_message}
+                      </div>
+                    </Show>
+                  </>
+                )}
+              </Show>
+            </Show>
+          </div>
+
+          <Show when={cfConfigured() && weeklyTraffic() !== null}>
             <div class="dash-sidebar-section">
-              <div class="dash-sidebar-label">Last Activity</div>
-              <div class="dash-activity-tag">{lastPublished()}</div>
+              <div class="dash-sidebar-label">Traffic</div>
+              <div class="dash-stat">
+                <span class="dash-stat-value">{weeklyTraffic()!.toLocaleString()}</span>
+                <span class="dash-stat-label">this week</span>
+              </div>
+              <span class="dash-traffic-link" onClick={() => navigate({ kind: "analytics" })}>
+                Analytics &rarr;
+              </span>
             </div>
           </Show>
+
         </Show>
       </aside>
 

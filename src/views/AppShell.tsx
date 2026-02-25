@@ -6,6 +6,7 @@ import { EditorView } from "./EditorView";
 import { AppDetailView } from "./AppDetailView";
 import { SettingsView } from "./SettingsView";
 import { CreateView } from "./CreateView";
+import { AnalyticsView } from "./AnalyticsView";
 
 export function AppShell() {
   const editorSlug = () => state.view.kind === "editor" ? state.view.slug : null;
@@ -15,7 +16,7 @@ export function AppShell() {
     <div class="app-layout">
       {/* Show top bar for list/create/settings views (not editor/detail — they have their own bar) */}
       <Switch>
-        <Match when={state.view.kind === "list" || state.view.kind === "create" || state.view.kind === "settings"}>
+        <Match when={state.view.kind === "list" || state.view.kind === "create" || state.view.kind === "settings" || state.view.kind === "analytics"}>
           <TopBar />
         </Match>
       </Switch>
@@ -44,6 +45,11 @@ export function AppShell() {
         <Match when={state.view.kind === "create"}>
           <main class="main-panel">
             <CreateView />
+          </main>
+        </Match>
+        <Match when={state.view.kind === "analytics"}>
+          <main class="main-panel">
+            <AnalyticsView />
           </main>
         </Match>
       </Switch>

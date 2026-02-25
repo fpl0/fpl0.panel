@@ -23,11 +23,21 @@ pub fn load_config(app: &tauri::AppHandle) -> AppConfig {
         serde_json::from_str(&data).unwrap_or(AppConfig {
             repo_path: None,
             theme: Some("light".into()),
+            cf_account_id: None,
+            cf_project_name: None,
+            cf_api_token: None,
+            cf_domain: None,
+            cf_zone_id: None,
         })
     } else {
         AppConfig {
             repo_path: None,
             theme: Some("light".into()),
+            cf_account_id: None,
+            cf_project_name: None,
+            cf_api_token: None,
+            cf_domain: None,
+            cf_zone_id: None,
         }
     }
 }

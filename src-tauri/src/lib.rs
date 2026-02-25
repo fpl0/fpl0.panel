@@ -1,5 +1,6 @@
 use tauri::Manager;
 
+mod cloudflare;
 mod commands;
 mod config;
 mod content;
@@ -19,6 +20,12 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .manage(watcher::WatcherState::new())
         .manage(devserver::DevServerState::new())
+        .manage(commands::HttpClient(
+            reqwest::Client::builder()
+                .timeout(std::time::Duration::from_secs(15))
+                .build()
+                .expect("Failed to build HTTP client"),
+        ))
         .invoke_handler(tauri::generate_handler![
             commands::get_config,
             commands::set_config,
@@ -38,6 +45,9 @@ pub fn run() {
             commands::start_dev_server,
             commands::stop_dev_server,
             commands::check_url_health,
+            commands::fetch_last_deployment,
+            commands::fetch_analytics,
+            commands::test_cf_connection,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

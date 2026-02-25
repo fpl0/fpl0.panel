@@ -15,6 +15,7 @@
 @import "./metadata.css";
 @import "./onboarding.css";
 @import "./settings.css";
+@import "./analytics.css";
 
 /* ==========================================================================
    BASE ELEMENTS
@@ -310,13 +311,19 @@ textarea.input:focus {
 }
 
 .main-panel {
-  flex: 1;
+  flex: 1 1 0;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
+  scrollbar-width: none;
   padding: clamp(var(--space-6), 4vh, var(--space-12)) var(--panel-gutter);
   max-width: var(--content-width);
   width: 100%;
   margin: 0 auto;
+}
+
+.main-panel::-webkit-scrollbar {
+  display: none;
 }
 
 /* Dashboard-specific main panel (no scroll) */

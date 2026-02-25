@@ -2,11 +2,17 @@
 
 use serde::{Deserialize, Serialize};
 
-/// Persisted application settings (repo path, theme preference).
+/// Persisted application settings (repo path, theme preference, Cloudflare credentials).
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AppConfig {
     pub repo_path: Option<String>,
     pub theme: Option<String>,
+    // Cloudflare credentials
+    pub cf_account_id: Option<String>,
+    pub cf_project_name: Option<String>,
+    pub cf_api_token: Option<String>,
+    pub cf_domain: Option<String>,
+    pub cf_zone_id: Option<String>,
 }
 
 /// A single content entry (blog post or app) as surfaced to the frontend.
@@ -50,4 +56,42 @@ pub struct HealthStatus {
     pub url: String,
     pub ok: bool,
     pub status_code: Option<u16>,
+}
+
+/// Info about the last successful Cloudflare Pages deployment.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CfDeploymentInfo {
+    pub deployed_at: String,
+    pub commit_hash: Option<String>,
+    pub commit_message: Option<String>,
+    pub status: String,
+    pub url: Option<String>,
+}
+
+/// Aggregated Cloudflare traffic analytics for a given period.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CfAnalytics {
+    pub period: String,
+    pub total_requests: u64,
+    pub daily_requests: Vec<CfDailyCount>,
+    pub top_paths: Vec<CfPathCount>,
+    pub top_countries: Vec<CfCountryCount>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CfDailyCount {
+    pub date: String,
+    pub count: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CfPathCount {
+    pub path: String,
+    pub count: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CfCountryCount {
+    pub country: String,
+    pub count: u64,
 }

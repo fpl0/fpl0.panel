@@ -14,6 +14,11 @@ export const DEV_SERVER_ORIGIN = `http://localhost:${DEV_SERVER_PORT}`;
 export interface AppConfig {
   repo_path: string | null;
   theme: string | null;
+  cf_account_id: string | null;
+  cf_project_name: string | null;
+  cf_api_token: string | null;
+  cf_domain: string | null;
+  cf_zone_id: string | null;
 }
 
 export interface ContentEntry {
@@ -35,6 +40,37 @@ export interface HealthStatus {
   url: string;
   ok: boolean;
   status_code: number | null;
+}
+
+export interface CfDeploymentInfo {
+  deployed_at: string;
+  commit_hash: string | null;
+  commit_message: string | null;
+  status: string;
+  url: string | null;
+}
+
+export interface CfDailyCount {
+  date: string;
+  count: number;
+}
+
+export interface CfPathCount {
+  path: string;
+  count: number;
+}
+
+export interface CfCountryCount {
+  country: string;
+  count: number;
+}
+
+export interface CfAnalytics {
+  period: string;
+  total_requests: number;
+  daily_requests: CfDailyCount[];
+  top_paths: CfPathCount[];
+  top_countries: CfCountryCount[];
 }
 
 export interface CreatePostArgs {
@@ -125,4 +161,16 @@ export function stopDevServer(): Promise<void> {
 
 export function checkUrlHealth(url: string): Promise<HealthStatus> {
   return invoke("check_url_health", { url });
+}
+
+export function fetchLastDeployment(): Promise<CfDeploymentInfo> {
+  return invoke("fetch_last_deployment");
+}
+
+export function fetchAnalytics(days: number, engagement: boolean): Promise<CfAnalytics> {
+  return invoke("fetch_analytics", { days, engagement });
+}
+
+export function testCfConnection(): Promise<string> {
+  return invoke("test_cf_connection");
 }

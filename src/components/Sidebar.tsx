@@ -20,7 +20,7 @@ export function TopBar() {
           class={`nav-link ${isActive("list") ? "active" : ""}`}
           onClick={() => navigate({ kind: "list" })}
         >
-          content
+          dashboard
         </button>
         <span class="nav-sep">/</span>
         <button
@@ -31,12 +31,18 @@ export function TopBar() {
         </button>
         <span class="nav-sep">/</span>
         <button
+          class={`nav-link ${isActive("analytics") ? "active" : ""}`}
+          onClick={() => navigate({ kind: "analytics" })}
+        >
+          analytics
+        </button>
+        <span class="nav-sep">/</span>
+        <button
           class={`nav-link ${isActive("settings") ? "active" : ""}`}
           onClick={() => navigate({ kind: "settings" })}
         >
           settings
         </button>
-
         <span class="nav-sep">/</span>
         <button
           class="nav-link"

@@ -99,6 +99,56 @@
 }
 
 /* ==========================================================================
+   CLOUDFLARE SETTINGS
+   ========================================================================== */
+
+.settings-section-cloudflare {
+  border-top: var(--space-px) solid var(--color-border);
+  padding-top: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.settings-cf-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+  max-width: 600px;
+}
+
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.settings-input {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: var(--space-px) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  outline: none;
+  transition: border-color var(--duration-normal) var(--ease-out);
+}
+
+.settings-input:focus {
+  border-color: var(--color-primary);
+}
+
+.settings-input::placeholder {
+  color: var(--color-muted);
+  opacity: 0.6;
+}
+
+.settings-cf-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* ==========================================================================
    KEYBOARD SHORTCUTS — Settings reference table
    ========================================================================== */
 

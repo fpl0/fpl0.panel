@@ -123,14 +123,52 @@
   margin-left: auto;
 }
 
-.dash-activity-tag {
+
+/* --- Deployment & Traffic Sidebar --- */
+
+.dash-deploy-commit {
   font-family: var(--font-mono-brand);
   font-size: var(--font-size-micro);
   color: var(--color-text-muted);
-  background: var(--color-surface);
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  margin-top: var(--space-1);
+}
+
+.dash-deploy-configure,
+.dash-deploy-loading {
+  font-family: var(--font-mono-brand);
+  font-size: var(--font-size-micro);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-loose);
+  color: var(--color-text-muted);
+}
+
+.dash-deploy-configure {
+  color: var(--color-primary);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.dash-deploy-configure:hover {
+  text-decoration: underline;
+}
+
+.dash-traffic-link {
+  font-family: var(--font-mono-brand);
+  font-size: var(--font-size-micro);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-loose);
+  color: var(--color-primary);
+  cursor: pointer;
+  margin-top: var(--space-2);
   display: inline-block;
+}
+
+.dash-traffic-link:hover {
+  text-decoration: underline;
 }
 
 /* --- Dashboard Main --- */
