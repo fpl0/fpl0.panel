@@ -199,12 +199,14 @@ pub async fn check_url_health(url: String) -> Result<HealthStatus, String> {
         return Err("Only HTTP(S) URLs are allowed".to_string());
     }
     let lower = url.to_lowercase();
-    if lower.contains("://localhost")
-        || lower.contains("://127.")
-        || lower.contains("://0.0.0.0")
-        || lower.contains("://[::1]")
-        || lower.contains("://10.")
-        || lower.contains("://192.168.")
+    let is_dev_server = lower.starts_with("http://localhost:4322");
+    if !is_dev_server
+        && (lower.contains("://localhost")
+            || lower.contains("://127.")
+            || lower.contains("://0.0.0.0")
+            || lower.contains("://[::1]")
+            || lower.contains("://10.")
+            || lower.contains("://192.168."))
     {
         return Err("Requests to local/private addresses are not allowed".to_string());
     }

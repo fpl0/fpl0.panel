@@ -5,7 +5,7 @@
  */
 import { createSignal, createMemo, For, Show, onMount, onCleanup } from "solid-js";
 import { state, openEntry } from "../lib/store";
-import { checkUrlHealth } from "../lib/commands";
+import { checkUrlHealth, DEV_SERVER_ORIGIN } from "../lib/commands";
 import type { HealthStatus } from "../lib/commands";
 
 type TypeFilter = "all" | "post" | "app";
@@ -39,7 +39,7 @@ export function ContentListView() {
 
   // --- Health polling ---
   async function pollHealth() {
-    checkUrlHealth("http://localhost:4321").then(setDevHealth).catch(() => {});
+    checkUrlHealth(DEV_SERVER_ORIGIN).then(setDevHealth).catch(() => {});
     checkUrlHealth("https://fpl0.io").then(setProdHealth).catch(() => {});
   }
 
@@ -166,7 +166,7 @@ export function ContentListView() {
             <div class="dash-health-list">
               <div class="dash-health-item">
                 <span class={`dash-health-dot ${devHealth()?.ok ? "up" : "down"}`} title={devHealth()?.ok ? "Server is up" : "Server is down"} />
-                <a class="dash-health-link" href="http://localhost:4321" target="_blank" rel="noopener noreferrer">Dev Server</a>
+                <a class="dash-health-link" href={DEV_SERVER_ORIGIN} target="_blank" rel="noopener noreferrer">Dev Server</a>
                 <span class="dash-health-status">{devHealth()?.ok ? "up" : "down"}</span>
               </div>
               <div class="dash-health-item">

@@ -56,8 +56,8 @@ export function TipTapEditor(props: Props) {
   let editor: Editor | null = null;
 
   // Character / word count
-  const [charCount, setCharCount] = createSignal(0);
-  const [wordCount, setWordCount] = createSignal(0);
+  const [_charCount, setCharCount] = createSignal(0);
+  const [_wordCount, setWordCount] = createSignal(0);
 
   // Editor reference for BubbleToolbar
   const [editorInstance, setEditorInstance] = createSignal<Editor | null>(null);
@@ -72,6 +72,8 @@ export function TipTapEditor(props: Props) {
   } | null>(null);
 
   /** Show a one-line input bar above the editor. Returns the entered value or null on cancel. */
+  // @ts-expect-error — entry point for command bar, will be wired to editor actions
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   function promptInline(placeholder: string, initial = ""): Promise<string | null> {
     return new Promise((resolve) => {
       setCmdBar({ placeholder, initial, resolve });

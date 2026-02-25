@@ -3,6 +3,10 @@
  */
 import { invoke } from "@tauri-apps/api/core";
 
+/** Port the panel's managed Astro dev server runs on (avoids conflicting with default 4321). */
+export const DEV_SERVER_PORT = 4322;
+export const DEV_SERVER_ORIGIN = `http://localhost:${DEV_SERVER_PORT}`;
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------

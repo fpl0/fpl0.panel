@@ -10,26 +10,58 @@ impl DevServerState {
     }
 }
 
-/// Robustly find the `bun` executable on macOS.
-/// Bundled apps don't inherit the shell's PATH.
-fn find_bun() -> String {
-    let common_paths = [
-        "/usr/local/bin/bun",
-        "/opt/homebrew/bin/bun",
-        &format!(
-            "{}/.local/share/mise/installs/bun/1.3.9/bin/bun",
-            env::var("HOME").unwrap_or_default()
-        ),
-        &format!("{}/.bun/bin/bun", env::var("HOME").unwrap_or_default()),
+/// Build an inclusive PATH for child processes in a bundled macOS app.
+/// Bundled apps don't inherit the user's shell PATH, so tools managed by
+/// mise, Homebrew, or bun's own installer are invisible without this.
+fn build_child_path() -> String {
+    let home = env::var("HOME").unwrap_or_default();
+    let mut parts: Vec<String> = Vec::new();
+
+    let candidates = [
+        format!("{}/.local/share/mise/shims", home), // mise-managed tools (node, bun, etc.)
+        format!("{}/.bun/bin", home),                 // bun default install
+        "/opt/homebrew/bin".to_string(),              // Homebrew (Apple Silicon)
+        "/usr/local/bin".to_string(),                 // Homebrew (Intel)
     ];
 
-    for path in common_paths {
-        if std::path::Path::new(path).exists() {
-            return path.to_string();
+    for dir in candidates {
+        if std::path::Path::new(&dir).is_dir() {
+            parts.push(dir);
         }
     }
 
-    "bun".to_string() // Fallback to PATH
+    // Append whatever PATH we already have
+    if let Ok(existing) = env::var("PATH") {
+        for segment in existing.split(':') {
+            if !segment.is_empty() && !parts.iter().any(|p| p == segment) {
+                parts.push(segment.to_string());
+            }
+        }
+    }
+
+    parts.join(":")
+}
+
+/// Find the `bun` executable on macOS.
+/// Checks well-known install locations since bundled apps can't rely on PATH.
+fn find_bun() -> String {
+    let home = env::var("HOME").unwrap_or_default();
+
+    let candidates = [
+        "/opt/homebrew/bin/bun".to_string(),
+        "/usr/local/bin/bun".to_string(),
+        format!("{}/.bun/bin/bun", home),
+        // mise "latest" symlink — avoids hardcoding a specific version
+        format!("{}/.local/share/mise/installs/bun/latest/bin/bun", home),
+    ];
+
+    for path in &candidates {
+        if std::path::Path::new(path).exists() {
+            return path.clone();
+        }
+    }
+
+    "bun".to_string()
 }
 
 pub fn start_dev_server(state: &DevServerState, repo_path: &str) -> Result<(), String> {
@@ -42,20 +74,15 @@ pub fn start_dev_server(state: &DevServerState, repo_path: &str) -> Result<(), S
     }
 
     let bun_path = find_bun();
+    let path_env = build_child_path();
 
-    // Build a more inclusive PATH for the child process
-    let mut path_env = env::var("PATH").unwrap_or_default();
-    if !path_env.contains("/opt/homebrew/bin") {
-        path_env = format!("{}:/opt/homebrew/bin:/usr/local/bin", path_env);
-    }
-
-    let child = Command::new(bun_path)
-        .args(["run", "dev"])
+    let child = Command::new(&bun_path)
+        .args(["run", "dev", "--", "--port", "4322"])
         .current_dir(repo_path)
-        .env("PATH", path_env)
+        .env("PATH", &path_env)
         .env("INCLUDE_DRAFTS", "true")
         .spawn()
-        .map_err(|e| format!("Failed to start dev server: {}", e))?;
+        .map_err(|e| format!("Failed to start dev server (bun={}): {}", bun_path, e))?;
 
     *guard = Some(child);
     Ok(())

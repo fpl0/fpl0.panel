@@ -1,6 +1,6 @@
 import { createSignal, createEffect, onMount, onCleanup, Show } from "solid-js";
 import type { ContentEntry } from "../lib/commands";
-import { openInVscode, readFile, writeFile } from "../lib/commands";
+import { openInVscode, readFile, writeFile, DEV_SERVER_ORIGIN } from "../lib/commands";
 import { setYamlField, splitFrontmatterFromContent } from "../lib/yaml";
 import {
   state,
@@ -26,7 +26,7 @@ export function AppDetailView(props: Props) {
   const [showUnpubConfirm, setShowUnpubConfirm] = createSignal(false);
   const [publishing, setPublishing] = createSignal(false);
   const [iframeError, setIframeError] = createSignal(false);
-  const [saveState, setSaveState] = createSignal<"saved" | "saving" | "unsaved">("saved");
+  const [_saveState, setSaveState] = createSignal<"saved" | "saving" | "unsaved">("saved");
 
   let iframeRef: HTMLIFrameElement | undefined;
 
@@ -129,7 +129,7 @@ export function AppDetailView(props: Props) {
   function reloadIframe() {
     if (iframeRef) {
       setIframeError(false);
-      iframeRef.src = `http://localhost:4321/apps/${props.slug}`;
+      iframeRef.src = `${DEV_SERVER_ORIGIN}/apps/${props.slug}`;
     }
   }
 
@@ -166,7 +166,7 @@ export function AppDetailView(props: Props) {
               <iframe
                 ref={iframeRef}
                 class="app-iframe"
-                src={`http://localhost:4321/apps/${props.slug}`}
+                src={`${DEV_SERVER_ORIGIN}/apps/${props.slug}`}
                 onError={() => setIframeError(true)}
                 onLoad={(e) => {
                   try {
