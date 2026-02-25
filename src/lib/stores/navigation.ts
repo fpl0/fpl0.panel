@@ -9,10 +9,10 @@ import type { View } from "./state";
 
 export function navigate(view: View) {
   if (state.navigationGuardActive) {
-    setState("pendingNavigation", view);
+    setState("pendingNavigation", () => view);
     return;
   }
-  setState("view", view);
+  setState("view", () => view);
 }
 
 export function openEntry(entry: ContentEntry) {
@@ -36,7 +36,7 @@ export function confirmNavigation() {
   setState("navigationGuardActive", false);
   setState("pendingNavigation", null);
   if (pending) {
-    setState("view", pending);
+    setState("view", () => pending);
   }
 }
 

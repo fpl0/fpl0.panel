@@ -10,6 +10,12 @@ import { checkUrlHealth, DEV_SERVER_ORIGIN } from "../lib/commands";
 import type { HealthStatus, CfDeploymentInfo } from "../lib/commands";
 import { getCachedDeployment, refreshDeployment, getCachedAnalytics } from "../lib/stores/cfcache";
 
+// --- Global health cache: survives component remounts ---
+const HEALTH_TTL = 300_000; // 5 minutes
+let lastHealthPoll = 0;
+let cachedDevHealth: HealthStatus | null = null;
+let cachedProdHealth: HealthStatus | null = null;
+
 function relativeTime(dateStr: string): string {
   const now = Date.now();
   const then = new Date(dateStr).getTime();
@@ -80,19 +86,21 @@ function weeklyActivity(entries: typeof state.entries, weeks: number): WeekActiv
 }
 
 export function ContentListView() {
-  const [devHealth, setDevHealth] = createSignal<HealthStatus | null>(null);
-  const [prodHealth, setProdHealth] = createSignal<HealthStatus | null>(null);
+  const [devHealth, setDevHealth] = createSignal<HealthStatus | null>(cachedDevHealth);
+  const [prodHealth, setProdHealth] = createSignal<HealthStatus | null>(cachedProdHealth);
 
-  // --- Health polling ---
+  // --- Health polling (throttled to 5-min TTL) ---
   async function pollHealth() {
-    checkUrlHealth(DEV_SERVER_ORIGIN).then(setDevHealth).catch(() => {});
-    checkUrlHealth("https://fpl0.io").then(setProdHealth).catch(() => {});
+    lastHealthPoll = Date.now();
+    checkUrlHealth(DEV_SERVER_ORIGIN).then((h) => { cachedDevHealth = h; setDevHealth(h); }).catch(() => {});
+    checkUrlHealth("https://fpl0.io").then((h) => { cachedProdHealth = h; setProdHealth(h); }).catch(() => {});
   }
 
   let healthInterval: ReturnType<typeof setInterval>;
   onMount(() => {
-    pollHealth();
-    healthInterval = setInterval(pollHealth, 300_000);
+    const stale = Date.now() - lastHealthPoll >= HEALTH_TTL;
+    if (stale) pollHealth();
+    healthInterval = setInterval(pollHealth, HEALTH_TTL);
   });
   onCleanup(() => clearInterval(healthInterval));
 
@@ -286,7 +294,7 @@ export function ContentListView() {
               </For>
             </ul>
           </Show>
-          <button class="mc-view-all" onClick={() => navigate({ kind: "library" })}>
+          <button class="mc-view-all" onClick={() => navigate({ kind: "library", status: "published" })}>
             All published &rarr;
           </button>
         </div>
@@ -321,7 +329,7 @@ export function ContentListView() {
               </For>
             </ul>
           </Show>
-          <button class="mc-view-all" onClick={() => navigate({ kind: "library" })}>
+          <button class="mc-view-all" onClick={() => navigate({ kind: "library", status: "draft" })}>
             All drafts &rarr;
           </button>
         </div>
@@ -335,9 +343,9 @@ export function ContentListView() {
             <div class="mc-tags">
               <For each={topTags()}>
                 {([tag, count]) => (
-                  <span class="mc-tag">
+                  <button class="mc-tag" onClick={() => navigate({ kind: "library", tag })}>
                     {tag}<span class="mc-tag-count">{count}</span>
-                  </span>
+                  </button>
                 )}
               </For>
             </div>
