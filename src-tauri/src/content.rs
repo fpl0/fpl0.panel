@@ -3,7 +3,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use crate::frontmatter::{parse_content_entry, to_slug, today_iso};
+use crate::frontmatter::{now_iso, parse_content_entry, to_slug};
 use crate::git::git_add_commit_push;
 use crate::security::escape_yaml_string;
 use crate::types::{ContentEntry, CreateAppArgs, CreatePostArgs};
@@ -89,7 +89,7 @@ pub fn create_post(repo_path: &str, args: CreatePostArgs) -> Result<ContentEntry
         format!("[{}]", inner.join(", "))
     };
 
-    let date = today_iso();
+    let date = now_iso();
     let content = format!(
         "---\ntitle: \"{}\"\nsummary: \"{}\"\ncreatedDate: \"{}\"\nisDraft: true\ntags: {}\n---\n",
         escape_yaml_string(&args.title),
@@ -151,9 +151,9 @@ pub fn create_app(repo_path: &str, args: CreateAppArgs) -> Result<ContentEntry, 
         format!("[{}]", inner.join(", "))
     };
 
-    let date = today_iso();
+    let date = now_iso();
     let index_content = format!(
-        "---\ntitle: \"{}\"\nsummary: \"{}\"\ncreatedDate: {}\nisDraft: true\ntags: {}\n---\n",
+        "---\ntitle: \"{}\"\nsummary: \"{}\"\ncreatedDate: \"{}\"\nisDraft: true\ntags: {}\n---\n",
         escape_yaml_string(&args.title),
         escape_yaml_string(&args.summary),
         date,

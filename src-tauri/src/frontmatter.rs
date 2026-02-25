@@ -17,9 +17,9 @@ pub static FRONTMATTER_RE: LazyLock<Regex> =
 pub static PUB_DATE_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?m)^publicationDate:").unwrap());
 
-/// Return today's date as an ISO-8601 string (YYYY-MM-DD) in the local timezone.
-pub fn today_iso() -> String {
-    Local::now().format("%Y-%m-%d").to_string()
+/// Return the current date and time as an ISO-8601 string (YYYY-MM-DDTHH:MM) in the local timezone.
+pub fn now_iso() -> String {
+    Local::now().format("%Y-%m-%dT%H:%M").to_string()
 }
 
 /// Convert a title string into a URL-safe slug (lowercase, hyphens only).

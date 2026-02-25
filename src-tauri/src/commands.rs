@@ -109,7 +109,7 @@ pub async fn publish(repo_path: String, slug: String) -> Result<ContentEntry, St
             &new_yaml,
             "createdDate",
             "publicationDate",
-            &format!("\"{}\"", frontmatter::today_iso()),
+            &format!("\"{}\"", frontmatter::now_iso()),
         );
     }
 

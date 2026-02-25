@@ -4,6 +4,21 @@ import type { ContentEntry } from "../lib/commands";
 const SUMMARY_MIN = 50;
 const SUMMARY_MAX = 360;
 
+function formatDateTime(dateStr: string): string {
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, "0");
+    const minutes = String(d.getMinutes()).padStart(2, "0");
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  } catch {
+    return dateStr;
+  }
+}
+
 interface Props {
   entry: ContentEntry;
   onFieldChange: (field: string, value: string) => void;
@@ -125,11 +140,11 @@ export function MetadataPanel(props: Props) {
         <div class="metadata-dates">
           <div class="metadata-field">
             <span class="label">Created</span>
-            <span class="system-label">{props.entry.created_date}</span>
+            <span class="system-label">{formatDateTime(props.entry.created_date)}</span>
           </div>
           <div class="metadata-field">
             <span class="label">Published</span>
-            <span class="system-label">{props.entry.publication_date || "\u2014"}</span>
+            <span class="system-label">{props.entry.publication_date ? formatDateTime(props.entry.publication_date) : "\u2014"}</span>
           </div>
         </div>
 
