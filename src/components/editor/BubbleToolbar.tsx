@@ -162,24 +162,32 @@ export function BubbleToolbar(props: Props) {
     const end = view.coordsAtPos(to);
     const editorRect = view.dom.getBoundingClientRect();
 
-    const top = start.top - editorRect.top - 50;
     const left = (start.top !== end.top ? start.left : (start.left + end.left) / 2) - editorRect.left;
+    // Estimate toolbar height for initial placement; refine after render
+    const gap = 8;
+    const estimatedHeight = 40;
+    const top = start.top - editorRect.top - estimatedHeight - gap;
 
     setPosition({ top: Math.max(0, top), left });
     setVisible(true);
     updateActiveStates();
 
-    // Post-render: clamp horizontally so toolbar doesn't overflow the editor
+    // Post-render: refine position using actual toolbar dimensions
     requestAnimationFrame(() => {
       if (!containerRef) return;
       const toolbarWidth = containerRef.offsetWidth;
+      const toolbarHeight = containerRef.offsetHeight;
       const editorWidth = view.dom.clientWidth;
+
+      // Vertical: use actual height + gap above selection
+      const refinedTop = start.top - editorRect.top - toolbarHeight - gap;
+
+      // Horizontal: clamp so toolbar stays within editor bounds
       const half = toolbarWidth / 2;
       const pad = 8;
-      const clamped = Math.min(Math.max(left, half + pad), editorWidth - half - pad);
-      if (clamped !== left) {
-        setPosition({ top: Math.max(0, top), left: clamped });
-      }
+      const clampedLeft = Math.min(Math.max(left, half + pad), editorWidth - half - pad);
+
+      setPosition({ top: Math.max(0, refinedTop), left: clampedLeft });
     });
   }
 
