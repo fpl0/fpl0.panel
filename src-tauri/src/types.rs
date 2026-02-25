@@ -30,6 +30,8 @@ pub struct ContentEntry {
     pub image: Option<String>,
     pub file_path: String,
     pub modified_date: Option<String>,
+    pub published_hash: Option<String>,
+    pub has_changed: bool,
 }
 
 /// Arguments for creating a new blog post via the IPC `create_post` command.
@@ -76,12 +78,19 @@ pub struct CfAnalytics {
     pub daily_requests: Vec<CfDailyCount>,
     pub top_paths: Vec<CfPathCount>,
     pub top_countries: Vec<CfCountryCount>,
+    pub status_codes: Vec<CfStatusCount>,
+    pub browsers: Vec<CfBrowserCount>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CfDailyCount {
     pub date: String,
     pub count: u64,
+    pub uniques: u64,
+    pub bytes: u64,
+    pub cached_bytes: u64,
+    pub cached_requests: u64,
+    pub threats: u64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -95,3 +104,16 @@ pub struct CfCountryCount {
     pub country: String,
     pub count: u64,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CfStatusCount {
+    pub status: u16,
+    pub count: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CfBrowserCount {
+    pub browser: String,
+    pub page_views: u64,
+}
+

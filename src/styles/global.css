@@ -183,6 +183,46 @@ blockquote cite::before {
   color: var(--color-text-muted);
 }
 
+/* --- Status Indicators --- */
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono-brand);
+  font-size: var(--font-size-micro);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-loose);
+  color: var(--color-text-muted);
+  padding: var(--space-1) var(--space-3);
+  background: var(--color-bg);
+  border: var(--ui-border-subtle);
+  border-radius: var(--radius-full);
+}
+
+.status-indicator .indicator-dot {
+  width: var(--space-1-5);
+  height: var(--space-1-5);
+  border-radius: 50%;
+  background: var(--color-muted);
+}
+
+.status-indicator.warning {
+  color: var(--color-warn);
+  border-color: var(--color-warn);
+  background: color-mix(in oklch, var(--color-warn) 5%, transparent);
+}
+
+.status-indicator.warning .indicator-dot {
+  background: var(--color-warn);
+  box-shadow: 0 0 8px var(--color-warn);
+  animation: pulse-warn 2s infinite var(--ease-in-out);
+}
+
+@keyframes pulse-warn {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.9); }
+}
+
 /* ==========================================================================
    FORM CONTROLS
    Designed from blog's tokens — subtractive, warm, understated.
@@ -208,6 +248,8 @@ blockquote cite::before {
     background-color var(--duration-normal) var(--ease-out);
   text-decoration: none;
   line-height: 1.2;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .btn:hover {
@@ -242,6 +284,17 @@ blockquote cite::before {
   border-color: var(--color-error);
   color: var(--color-bg);
   opacity: 0.7;
+}
+
+.btn-warn {
+  color: var(--color-warn);
+  border-color: var(--color-warn);
+}
+
+.btn-warn:hover {
+  background: var(--color-warn);
+  border-color: var(--color-warn);
+  color: var(--color-bg);
 }
 
 .btn:disabled {

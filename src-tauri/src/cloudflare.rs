@@ -2,7 +2,10 @@
 //!
 //! All functions accept a shared `&reqwest::Client` to reuse connections.
 
-use crate::types::{CfAnalytics, CfCountryCount, CfDailyCount, CfDeploymentInfo, CfPathCount};
+use crate::types::{
+    CfAnalytics, CfBrowserCount, CfCountryCount, CfDailyCount, CfDeploymentInfo, CfPathCount,
+    CfStatusCount,
+};
 
 /// Look up the zone ID for a domain via the Cloudflare Zones API.
 pub async fn fetch_zone_id(
@@ -137,6 +140,7 @@ pub async fn fetch_analytics(
         ""
     };
 
+    // Main query: daily totals (with extended fields) + original adaptive queries
     let query = format!(
         r#"{{
   viewer {{
@@ -147,7 +151,15 @@ pub async fn fetch_analytics(
         orderBy: [date_ASC]
       ) {{
         dimensions {{ date }}
-        sum {{ {daily_metric} }}
+        sum {{
+          {daily_metric}
+          bytes
+          cachedBytes
+          cachedRequests
+          threats
+          responseStatusMap {{ requests edgeResponseStatus }}
+          browserMap {{ pageViews uaBrowserFamily }}
+        }}
       }}
       topPaths: httpRequestsAdaptiveGroups(
         filter: {{ datetime_geq: "{adaptive_start}", datetime_leq: "{adaptive_end}"{adaptive_extra} }}
@@ -198,15 +210,65 @@ pub async fn fetch_analytics(
         .ok_or("No zone data returned")?;
 
     // Parse daily counts from httpRequests1dGroups
-    let mut daily_map: std::collections::BTreeMap<String, u64> = std::collections::BTreeMap::new();
+    // Per-day accumulators for scalar fields
+    struct DayAccum {
+        count: u64,
+        bytes: u64,
+        cached_bytes: u64,
+        cached_requests: u64,
+        threats: u64,
+    }
+    let mut daily_map: std::collections::BTreeMap<String, DayAccum> =
+        std::collections::BTreeMap::new();
+    // Aggregate status codes and browsers across the full period
+    let mut status_map: std::collections::HashMap<u16, u64> = std::collections::HashMap::new();
+    let mut browser_map: std::collections::HashMap<String, u64> = std::collections::HashMap::new();
+
     if let Some(daily_arr) = zone["daily"].as_array() {
         for entry in daily_arr {
             let date = entry["dimensions"]["date"]
                 .as_str()
                 .unwrap_or_default()
                 .to_string();
-            let count = entry["sum"][daily_metric].as_u64().unwrap_or(0);
-            *daily_map.entry(date).or_default() += count;
+            let sum = &entry["sum"];
+            let count = sum[daily_metric].as_u64().unwrap_or(0);
+            let bytes = sum["bytes"].as_u64().unwrap_or(0);
+            let cached_bytes = sum["cachedBytes"].as_u64().unwrap_or(0);
+            let cached_requests = sum["cachedRequests"].as_u64().unwrap_or(0);
+            let threats = sum["threats"].as_u64().unwrap_or(0);
+
+            let acc = daily_map.entry(date).or_insert(DayAccum {
+                count: 0,
+                bytes: 0,
+                cached_bytes: 0,
+                cached_requests: 0,
+                threats: 0,
+            });
+            acc.count += count;
+            acc.bytes += bytes;
+            acc.cached_bytes += cached_bytes;
+            acc.cached_requests += cached_requests;
+            acc.threats += threats;
+
+            // Aggregate response status codes
+            if let Some(status_arr) = sum["responseStatusMap"].as_array() {
+                for s in status_arr {
+                    let code = s["edgeResponseStatus"].as_u64().unwrap_or(0) as u16;
+                    let reqs = s["requests"].as_u64().unwrap_or(0);
+                    *status_map.entry(code).or_default() += reqs;
+                }
+            }
+            // Aggregate browser families
+            if let Some(browser_arr) = sum["browserMap"].as_array() {
+                for b in browser_arr {
+                    let family = b["uaBrowserFamily"]
+                        .as_str()
+                        .unwrap_or("Unknown")
+                        .to_string();
+                    let pv = b["pageViews"].as_u64().unwrap_or(0);
+                    *browser_map.entry(family).or_default() += pv;
+                }
+            }
         }
     }
     // Build a contiguous series so every day in the range has an entry (0 if missing)
@@ -215,12 +277,36 @@ pub async fn fetch_analytics(
             let date = (start + chrono::Duration::days(i as i64))
                 .format("%Y-%m-%d")
                 .to_string();
-            let count = daily_map.get(&date).copied().unwrap_or(0);
-            CfDailyCount { date, count }
+            let acc = daily_map.get(&date);
+            CfDailyCount {
+                date,
+                count: acc.map_or(0, |a| a.count),
+                uniques: 0, // not available on free plan
+                bytes: acc.map_or(0, |a| a.bytes),
+                cached_bytes: acc.map_or(0, |a| a.cached_bytes),
+                cached_requests: acc.map_or(0, |a| a.cached_requests),
+                threats: acc.map_or(0, |a| a.threats),
+            }
         })
         .collect();
 
     let total_requests: u64 = daily_requests.iter().map(|d| d.count).sum();
+
+    // Sort and truncate status codes (top 10)
+    let mut status_codes: Vec<CfStatusCount> = status_map
+        .into_iter()
+        .map(|(status, count)| CfStatusCount { status, count })
+        .collect();
+    status_codes.sort_by(|a, b| b.count.cmp(&a.count));
+    status_codes.truncate(10);
+
+    // Sort and truncate browsers (top 10)
+    let mut browsers: Vec<CfBrowserCount> = browser_map
+        .into_iter()
+        .map(|(browser, page_views)| CfBrowserCount { browser, page_views })
+        .collect();
+    browsers.sort_by(|a, b| b.page_views.cmp(&a.page_views));
+    browsers.truncate(10);
 
     // Parse top paths from adaptive groups (last 24h)
     let mut path_map: std::collections::HashMap<String, u64> = std::collections::HashMap::new();
@@ -270,5 +356,7 @@ pub async fn fetch_analytics(
         daily_requests,
         top_paths,
         top_countries,
+        status_codes,
+        browsers,
     })
 }

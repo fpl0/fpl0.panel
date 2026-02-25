@@ -8,10 +8,13 @@ import {
   navigate,
   publishEntry,
   unpublishEntry,
+  rollbackEntry,
   deleteEntry,
   refreshEntries,
   addToast,
   updateToast,
+  lastExternalChange,
+  clearExternalChange,
 } from "../lib/store";
 import { DetailBar } from "../components/Sidebar";
 import { MetadataPanel } from "../components/MetadataPanel";
@@ -24,6 +27,7 @@ interface Props {
 export function AppDetailView(props: Props) {
   const [showDeleteConfirm, setShowDeleteConfirm] = createSignal(false);
   const [showUnpubConfirm, setShowUnpubConfirm] = createSignal(false);
+  const [showRollbackConfirm, setShowRollbackConfirm] = createSignal(false);
   const [publishing, setPublishing] = createSignal(false);
   const [iframeError, setIframeError] = createSignal(false);
   const [_saveState, setSaveState] = createSignal<"saved" | "saving" | "unsaved">("saved");
@@ -51,6 +55,19 @@ export function AppDetailView(props: Props) {
     }
   });
 
+  // Auto-reload when any file in the app directory changes externally
+  createEffect(() => {
+    const paths = lastExternalChange();
+    if (!paths || !filePath) return;
+    // filePath is .../apps/{slug}/index.md — match any file in the parent directory
+    const appDir = filePath.replace(/\/index\.md$/, "");
+    if (paths.some((p) => p.startsWith(appDir))) {
+      reloadIframe();
+      refreshEntries().catch(() => {});
+      clearExternalChange();
+    }
+  });
+
   async function handlePublish() {
     if (!state.config.repo_path) return;
     setPublishing(true);
@@ -75,6 +92,21 @@ export function AppDetailView(props: Props) {
       updateToast(tid, `Unpublished: ${updated.title}`, "success");
     } catch (e) {
       updateToast(tid, `Unpublish failed: ${e}`, "error");
+    } finally {
+      setPublishing(false);
+    }
+  }
+
+  async function handleRollback() {
+    if (!state.config.repo_path) return;
+    setShowRollbackConfirm(false);
+    setPublishing(true);
+    const tid = addToast("Rolling back...", "warn");
+    try {
+      const updated = await rollbackEntry(props.slug);
+      updateToast(tid, `Rolled back: ${updated.title}`, "success");
+    } catch (e) {
+      updateToast(tid, `Rollback failed: ${e}`, "error");
     } finally {
       setPublishing(false);
     }
@@ -137,13 +169,13 @@ export function AppDetailView(props: Props) {
     <Show when={activeEntry()} fallback={<div class="content-empty"><p>Entry not found.</p></div>} keyed>
       {(entry: ContentEntry) => (
         <>
-          <DetailBar title={entry.title}>
+          <DetailBar title="">
             <button class="btn" onClick={reloadIframe}>
               Reload
             </button>
 
             <button class="btn" onClick={handleOpenVscode}>
-              Open in VS Code
+              VS Code
             </button>
 
             {entry.is_draft ? (
@@ -151,9 +183,21 @@ export function AppDetailView(props: Props) {
                 {publishing() ? "Publishing..." : "Publish"}
               </button>
             ) : (
-              <button class="btn" onClick={() => setShowUnpubConfirm(true)} disabled={publishing()}>
-                {publishing() ? "Working..." : "Unpublish"}
-              </button>
+              <>
+                <Show when={entry.has_changed && entry.published_hash}>
+                  <button class="btn" onClick={() => setShowRollbackConfirm(true)} disabled={publishing()}>
+                    Rollback
+                  </button>
+                </Show>
+                <Show when={entry.has_changed}>
+                  <button class="btn btn-primary" onClick={handlePublish} disabled={publishing()}>
+                    {publishing() ? "Publishing..." : "Publish"}
+                  </button>
+                </Show>
+                <button class="btn" onClick={() => setShowUnpubConfirm(true)} disabled={publishing()}>
+                  Unpublish
+                </button>
+              </>
             )}
 
             <button class="btn btn-danger" onClick={() => setShowDeleteConfirm(true)} disabled={publishing()}>
@@ -213,6 +257,17 @@ export function AppDetailView(props: Props) {
               confirmLabel="Unpublish"
               onConfirm={handleUnpublish}
               onCancel={() => setShowUnpubConfirm(false)}
+            />
+          )}
+
+          {showRollbackConfirm() && (
+            <ConfirmDialog
+              title="Rollback changes?"
+              message={`This will revert "${entry.title}" to its published state. All local changes will be lost.`}
+              confirmLabel="Rollback"
+              danger
+              onConfirm={handleRollback}
+              onCancel={() => setShowRollbackConfirm(false)}
             />
           )}
         </>

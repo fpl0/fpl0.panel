@@ -99,12 +99,53 @@ pub async fn publish(repo_path: String, slug: String) -> Result<ContentEntry, St
     let (yaml, rest) = frontmatter::split_frontmatter(&file_content)
         .ok_or_else(|| "Could not parse frontmatter.".to_string())?;
 
+    let is_app = content_type == "app";
+
+    // Compute hash: directory hash for apps, body hash for posts.
+    let hash = if is_app {
+        file_path
+            .parent()
+            .map(frontmatter::calculate_directory_hash)
+            .ok_or_else(|| "Could not determine app directory.".to_string())?
+    } else {
+        frontmatter::calculate_content_hash(&rest)
+    };
+
+    // For apps, commit the whole directory; for posts, just the index file.
+    let rel_commit_path = if is_app {
+        format!("src/content/apps/{}", slug)
+    } else {
+        file_path
+            .strip_prefix(base)
+            .unwrap_or(&file_path)
+            .to_string_lossy()
+            .to_string()
+    };
+
     if frontmatter::get_yaml_bool(&yaml, "isDraft") == Some(false) {
+        // Already published — update the baseline hash if content has changed.
+        let current_hash = frontmatter::get_yaml_field(&yaml, "publishedHash");
+        if current_hash.as_deref() == Some(&hash) {
+            return frontmatter::parse_content_entry(&slug, &content_type, &file_path)
+                .ok_or_else(|| "Failed to parse entry.".to_string());
+        }
+
+        let new_yaml =
+            frontmatter::set_frontmatter_field(&yaml, "publishedHash", &format!("\"{}\"", hash));
+        let new_content = frontmatter::assemble_file(&new_yaml, &rest);
+        fs::write(&file_path, &new_content).map_err(|e| e.to_string())?;
+
+        let title =
+            frontmatter::get_yaml_field(&new_yaml, "title").unwrap_or_else(|| slug.clone());
+        git::git_add_commit_push(&repo_path, &rel_commit_path, &format!("publish: {}", title))?;
+
         return frontmatter::parse_content_entry(&slug, &content_type, &file_path)
             .ok_or_else(|| "Failed to parse entry.".to_string());
     }
 
     let mut new_yaml = frontmatter::set_frontmatter_field(&yaml, "isDraft", "false");
+    new_yaml =
+        frontmatter::set_frontmatter_field(&new_yaml, "publishedHash", &format!("\"{}\"", hash));
 
     let has_pub_date = frontmatter::PUB_DATE_RE.is_match(&new_yaml);
     if !has_pub_date {
@@ -119,13 +160,8 @@ pub async fn publish(repo_path: String, slug: String) -> Result<ContentEntry, St
     let new_content = frontmatter::assemble_file(&new_yaml, &rest);
     fs::write(&file_path, &new_content).map_err(|e| e.to_string())?;
 
-    let rel_path = file_path
-        .strip_prefix(base)
-        .unwrap_or(&file_path)
-        .to_string_lossy()
-        .to_string();
     let title = frontmatter::get_yaml_field(&new_yaml, "title").unwrap_or_else(|| slug.clone());
-    git::git_add_commit_push(&repo_path, &rel_path, &format!("publish: {}", title))?;
+    git::git_add_commit_push(&repo_path, &rel_commit_path, &format!("publish: {}", title))?;
 
     frontmatter::parse_content_entry(&slug, &content_type, &file_path)
         .ok_or_else(|| "Failed to parse entry after publish.".to_string())
@@ -158,6 +194,29 @@ pub async fn unpublish(repo_path: String, slug: String) -> Result<ContentEntry, 
 
     frontmatter::parse_content_entry(&slug, &content_type, &file_path)
         .ok_or_else(|| "Failed to parse entry after unpublish.".to_string())
+}
+
+#[tauri::command]
+pub async fn rollback(repo_path: String, slug: String) -> Result<ContentEntry, String> {
+    let base = Path::new(&repo_path);
+    let (file_path, content_type) = content::find_content_file(base, &slug)?;
+    let rel_path = file_path
+        .strip_prefix(base)
+        .unwrap_or(&file_path)
+        .to_string_lossy()
+        .to_string();
+
+    let commit_hash = git::find_last_publish_commit(&repo_path, &rel_path)?;
+
+    if content_type == "app" {
+        let rel_dir = format!("src/content/apps/{}", slug);
+        git::rollback_directory(&repo_path, &commit_hash, &rel_dir)?;
+    } else {
+        git::rollback_file(&repo_path, &commit_hash, &rel_path)?;
+    }
+
+    frontmatter::parse_content_entry(&slug, &content_type, &file_path)
+        .ok_or_else(|| "Failed to parse entry after rollback.".to_string())
 }
 
 // ---------------------------------------------------------------------------

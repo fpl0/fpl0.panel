@@ -336,7 +336,7 @@ export function ContentListView() {
                 {(entry) => (
                   <li class="post-item">
                     <div class="post-date-col">
-                      <span class={`post-status-dot ${entry.is_draft ? "draft" : "published"}`} />
+                      <span class={`post-status-dot ${entry.is_draft ? "draft" : entry.has_changed ? "changed" : "published"}`} title={entry.is_draft ? "Draft" : entry.has_changed ? "Modified since publication" : "Published"} />
                       <span class="post-date">{formatDate(sortBy() === "modified" ? (entry.modified_date ?? entry.created_date) : entry.created_date)}</span>
                     </div>
                     <div class="post-content">

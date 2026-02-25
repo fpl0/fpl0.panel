@@ -92,8 +92,10 @@ export async function getCachedAnalytics(
       analyticsCache.set(key, { data, fetchedAt: Date.now() });
       onUpdate(data);
       return data;
-    } catch {
-      return cached?.data ?? null;
+    } catch (e) {
+      // If we have cached data, serve it silently; otherwise re-throw
+      if (cached) return cached.data;
+      throw e;
     }
   }
 

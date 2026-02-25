@@ -355,6 +355,10 @@
   background: var(--color-success);
 }
 
+.post-status-dot.changed {
+  background: var(--color-primary);
+}
+
 .post-date {
   font-family: var(--font-mono-brand);
   font-size: var(--font-size-xxs);

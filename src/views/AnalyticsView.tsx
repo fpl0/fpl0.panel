@@ -1,6 +1,7 @@
 /**
  * AnalyticsView — Cloudflare traffic dashboard.
- * SVG bar chart with value labels, top content paths, and top countries.
+ * SVG bar chart, KPI strip, and 2-column grids for paths, countries,
+ * browsers, and status codes.
  * Toggleable between full traffic metrics and engagement-only (page views).
  */
 import { createSignal, For, Show, onMount } from "solid-js";
@@ -18,6 +19,20 @@ function formatCompact(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
   return String(n);
+}
+
+function formatBytes(b: number): string {
+  if (b >= 1_000_000_000) return `${(b / 1_000_000_000).toFixed(1)} GB`;
+  if (b >= 1_000_000) return `${(b / 1_000_000).toFixed(1)} MB`;
+  if (b >= 1_000) return `${(b / 1_000).toFixed(1)} KB`;
+  return `${b} B`;
+}
+
+function statusClass(code: number): string {
+  if (code >= 500) return "analytics-status-5xx";
+  if (code >= 400) return "analytics-status-4xx";
+  if (code >= 300) return "analytics-status-3xx";
+  return "analytics-status-2xx";
 }
 
 /** Format "2026-02-18" → "Feb 18" */
@@ -121,47 +136,69 @@ export function AnalyticsView() {
   const [period, setPeriod] = createSignal<Period>(7);
   const [metric, setMetric] = createSignal<MetricMode>("engagement");
 
+  // Guards against stale responses when filters are switched rapidly
+  let requestGen = 0;
+
   // Initial load: serve cached data instantly, refresh if stale
   onMount(async () => {
+    const gen = ++requestGen;
     const eng = metric() === "engagement";
-    await getCachedAnalytics(period(), eng, (data) => {
-      setAnalytics(data);
-      setLoading(false);
-    });
-    // If getCachedAnalytics didn't call onUpdate (no cache, fetch failed)
-    setLoading(false);
+    try {
+      await getCachedAnalytics(period(), eng, (data) => {
+        if (gen === requestGen) {
+          setAnalytics(data);
+          setLoading(false);
+        }
+      });
+    } catch (e) {
+      if (gen === requestGen) setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      if (gen === requestGen) setLoading(false);
+    }
   });
 
   // User-triggered filter changes: always hit the network
   async function switchPeriod(p: Period) {
+    const gen = ++requestGen;
     setPeriod(p);
     setLoading(true);
     setError(null);
     try {
       const data = await forceAnalytics(p, metric() === "engagement");
-      setAnalytics(data);
+      if (gen === requestGen) setAnalytics(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      if (gen === requestGen) setError(e instanceof Error ? e.message : String(e));
     } finally {
-      setLoading(false);
+      if (gen === requestGen) setLoading(false);
     }
   }
 
   async function switchMetric(m: MetricMode) {
+    const gen = ++requestGen;
     setMetric(m);
     setLoading(true);
     setError(null);
     try {
       const data = await forceAnalytics(period(), m === "engagement");
-      setAnalytics(data);
+      if (gen === requestGen) setAnalytics(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      if (gen === requestGen) setError(e instanceof Error ? e.message : String(e));
     } finally {
-      setLoading(false);
+      if (gen === requestGen) setLoading(false);
     }
   }
 
   const metricLabel = () => (metric() === "engagement" ? "page views" : "requests");
+
+  // Derived KPI values from daily_requests
+  const totalBytes = (a: CfAnalytics) => a.daily_requests.reduce((s, d) => s + d.bytes, 0);
+  const totalCachedBytes = (a: CfAnalytics) => a.daily_requests.reduce((s, d) => s + d.cached_bytes, 0);
+  const totalThreats = (a: CfAnalytics) => a.daily_requests.reduce((s, d) => s + d.threats, 0);
+  const cacheRatio = (a: CfAnalytics) => {
+    const total = totalBytes(a);
+    if (total === 0) return 0;
+    return Math.round((totalCachedBytes(a) / total) * 100);
+  };
 
   return (
     <div class="analytics-view">
@@ -190,7 +227,7 @@ export function AnalyticsView() {
       <Show when={analytics()}>
         {(a) => (
           <div class={`analytics-content ${loading() ? "analytics-loading" : ""}`}>
-            {/* Controls: metric toggle + period toggle + total */}
+            {/* Header: controls + KPI strip */}
             <div class="analytics-header">
               <div class="analytics-controls">
                 <div class="filter-group">
@@ -222,9 +259,25 @@ export function AnalyticsView() {
                   </button>
                 </div>
               </div>
-              <div class="analytics-total">
-                <span class="analytics-total-value">{formatNumber(a().total_requests)}</span>
-                <span class="analytics-total-label">{metricLabel()}</span>
+              <div class="analytics-kpi-strip">
+                <div class="analytics-kpi">
+                  <span class="analytics-kpi-value">{formatNumber(a().total_requests)}</span>
+                  <span class="analytics-kpi-label">{metricLabel()}</span>
+                </div>
+                <div class="analytics-kpi">
+                  <span class="analytics-kpi-value">{formatBytes(totalBytes(a()))}</span>
+                  <span class="analytics-kpi-label">bandwidth</span>
+                </div>
+                <div class="analytics-kpi">
+                  <span class="analytics-kpi-value">{cacheRatio(a())}%</span>
+                  <span class="analytics-kpi-label">cached</span>
+                </div>
+                <Show when={totalThreats(a()) > 0}>
+                  <div class="analytics-kpi analytics-kpi-warn">
+                    <span class="analytics-kpi-value">{formatNumber(totalThreats(a()))}</span>
+                    <span class="analytics-kpi-label">threats</span>
+                  </div>
+                </Show>
               </div>
             </div>
 
@@ -236,7 +289,7 @@ export function AnalyticsView() {
               <BarChart data={a().daily_requests} />
             </div>
 
-            {/* Two-column: Top Content + Top Countries */}
+            {/* Row 1: Top Paths + Top Countries */}
             <div class="analytics-grid">
               <div class="analytics-section">
                 <div class="analytics-section-label">
@@ -291,6 +344,86 @@ export function AnalyticsView() {
                             </div>
                             <span class="analytics-country-pct">{pct()}%</span>
                             <span class="analytics-country-count">{formatNumber(c.count)}</span>
+                          </div>
+                        );
+                      }}
+                    </For>
+                  </div>
+                </Show>
+              </div>
+            </div>
+
+            {/* Row 2: Browsers + Status Codes */}
+            <div class="analytics-grid">
+              <div class="analytics-section">
+                <div class="analytics-section-label">Browsers &middot; {period()}d</div>
+                <Show
+                  when={a().browsers.length > 0}
+                  fallback={<p class="analytics-empty">No browser data.</p>}
+                >
+                  <div class="analytics-country-list">
+                    <For each={a().browsers}>
+                      {(b, i) => {
+                        const total = () => a().browsers.reduce((s, x) => s + x.page_views, 0) || 1;
+                        const pct = () => {
+                          const raw = (b.page_views / total()) * 100;
+                          if (raw >= 1) return `${Math.round(raw)}`;
+                          if (raw >= 0.1) return raw.toFixed(1);
+                          return "<0.1";
+                        };
+                        const maxCount = () => a().browsers[0]?.page_views || 1;
+                        const barWidth = () => Math.max(Math.round((b.page_views / maxCount()) * 100), 2);
+                        return (
+                          <div class="analytics-country-row">
+                            <span class="analytics-country-rank">{i() + 1}.</span>
+                            <span class="analytics-country-name">{b.browser}</span>
+                            <div class="analytics-country-bar-bg">
+                              <div
+                                class="analytics-country-bar"
+                                style={{ width: `${barWidth()}%` }}
+                              />
+                            </div>
+                            <span class="analytics-country-pct">{pct()}%</span>
+                            <span class="analytics-country-count">{formatNumber(b.page_views)}</span>
+                          </div>
+                        );
+                      }}
+                    </For>
+                  </div>
+                </Show>
+              </div>
+
+              <div class="analytics-section">
+                <div class="analytics-section-label">Status Codes &middot; {period()}d</div>
+                <Show
+                  when={a().status_codes.length > 0}
+                  fallback={<p class="analytics-empty">No status code data.</p>}
+                >
+                  <div class="analytics-status-list">
+                    <For each={a().status_codes}>
+                      {(s) => {
+                        const total = () => a().status_codes.reduce((sum, x) => sum + x.count, 0) || 1;
+                        const pct = () => {
+                          const raw = (s.count / total()) * 100;
+                          if (raw >= 1) return `${Math.round(raw)}`;
+                          if (raw >= 0.1) return raw.toFixed(1);
+                          return "<0.1";
+                        };
+                        const maxCount = () => a().status_codes[0]?.count || 1;
+                        const barWidth = () => Math.max(Math.round((s.count / maxCount()) * 100), 2);
+                        return (
+                          <div class="analytics-status-row">
+                            <span class={`analytics-status-badge ${statusClass(s.status)}`}>
+                              {s.status}
+                            </span>
+                            <div class="analytics-country-bar-bg">
+                              <div
+                                class={`analytics-country-bar ${statusClass(s.status)}-bar`}
+                                style={{ width: `${barWidth()}%` }}
+                              />
+                            </div>
+                            <span class="analytics-country-pct">{pct()}%</span>
+                            <span class="analytics-country-count">{formatNumber(s.count)}</span>
                           </div>
                         );
                       }}

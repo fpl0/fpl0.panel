@@ -48,7 +48,7 @@ export function AppShell() {
           </main>
         </Match>
         <Match when={state.view.kind === "analytics"}>
-          <main class="main-panel">
+          <main class="main-panel wide">
             <AnalyticsView />
           </main>
         </Match>

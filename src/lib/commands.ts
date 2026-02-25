@@ -34,6 +34,8 @@ export interface ContentEntry {
   image: string | null;
   file_path: string;
   modified_date: string | null;
+  published_hash: string | null;
+  has_changed: boolean;
 }
 
 export interface HealthStatus {
@@ -53,6 +55,11 @@ export interface CfDeploymentInfo {
 export interface CfDailyCount {
   date: string;
   count: number;
+  uniques: number;
+  bytes: number;
+  cached_bytes: number;
+  cached_requests: number;
+  threats: number;
 }
 
 export interface CfPathCount {
@@ -65,12 +72,24 @@ export interface CfCountryCount {
   count: number;
 }
 
+export interface CfStatusCount {
+  status: number;
+  count: number;
+}
+
+export interface CfBrowserCount {
+  browser: string;
+  page_views: number;
+}
+
 export interface CfAnalytics {
   period: string;
   total_requests: number;
   daily_requests: CfDailyCount[];
   top_paths: CfPathCount[];
   top_countries: CfCountryCount[];
+  status_codes: CfStatusCount[];
+  browsers: CfBrowserCount[];
 }
 
 export interface CreatePostArgs {
@@ -133,6 +152,10 @@ export function publish(repoPath: string, slug: string): Promise<ContentEntry> {
 
 export function unpublish(repoPath: string, slug: string): Promise<ContentEntry> {
   return invoke("unpublish", { repoPath, slug });
+}
+
+export function rollback(repoPath: string, slug: string): Promise<ContentEntry> {
+  return invoke("rollback", { repoPath, slug });
 }
 
 export function gitStatus(repoPath: string): Promise<string> {

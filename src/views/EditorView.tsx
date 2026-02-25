@@ -9,6 +9,7 @@ import {
   navigate,
   publishEntry,
   unpublishEntry,
+  rollbackEntry,
   deleteEntry,
   refreshEntries,
   patchEntry,
@@ -33,11 +34,13 @@ interface Props {
 
 export function EditorView(props: Props) {
   const [yaml, setYaml] = createSignal("");
+  const [unknownImports, setUnknownImports] = createSignal<string[]>([]);
   const [editorContent, setEditorContent] = createSignal<JSONContent | null>(null);
   const [saveState, setSaveState] = createSignal<"saved" | "saving" | "unsaved">("saved");
   const [loading, setLoading] = createSignal(true);
   const [showDeleteConfirm, setShowDeleteConfirm] = createSignal(false);
   const [showUnpubConfirm, setShowUnpubConfirm] = createSignal(false);
+  const [showRollbackConfirm, setShowRollbackConfirm] = createSignal(false);
   const [showReloadConfirm, setShowReloadConfirm] = createSignal(false);
   const [publishing, setPublishing] = createSignal(false);
   const [showExternalBanner, setShowExternalBanner] = createSignal(false);
@@ -45,7 +48,6 @@ export function EditorView(props: Props) {
   const [charCount, setCharCount] = createSignal(0);
   let saveTimeout: ReturnType<typeof setTimeout> | null = null;
   let currentDoc: JSONContent | null = null;
-  let metadataChanged = false;
 
   // Snapshot file_path at mount so async operations don't crash if entry disappears
   let filePath = "";
@@ -57,8 +59,9 @@ export function EditorView(props: Props) {
     setNavigationGuard(true);
     try {
       const raw = await readFile(filePath);
-      const { yaml: y, doc } = parseMdxToEditor(raw);
+      const { yaml: y, doc, unknownImports: ui } = parseMdxToEditor(raw);
       setYaml(y);
+      setUnknownImports(ui);
       setEditorContent(doc);
       currentDoc = doc;
     } catch (err) {
@@ -102,17 +105,17 @@ export function EditorView(props: Props) {
     setSaveState("saving");
     try {
       suppressFsChange();
-      const mdx = serializeEditorToMdx(yaml(), currentDoc);
+      const mdx = serializeEditorToMdx(yaml(), currentDoc, unknownImports());
       await writeFile(filePath, mdx);
       setSaveState("saved");
-      if (metadataChanged) {
-        metadataChanged = false;
-        await refreshEntries();
-      }
     } catch (e) {
       setSaveState("unsaved");
       addToast(`Save failed: ${e}`, "error");
+      return;
     }
+    // Refresh entries so has_changed (and metadata) stay current in the store.
+    // Runs outside try/catch — a refresh failure must not revert save state.
+    await refreshEntries().catch(() => {});
   }
 
   function scheduleSave() {
@@ -134,7 +137,6 @@ export function EditorView(props: Props) {
       patchEntry(props.slug, { [field]: value });
     }
 
-    metadataChanged = true;
     scheduleSave();
   }
 
@@ -143,8 +145,9 @@ export function EditorView(props: Props) {
     if (!filePath) return;
     try {
       const raw = await readFile(filePath);
-      const { yaml: y } = parseMdxToEditor(raw);
+      const { yaml: y, unknownImports: ui } = parseMdxToEditor(raw);
       setYaml(y);
+      setUnknownImports(ui);
     } catch { /* entry may have been deleted — noop is intentional */ }
   }
 
@@ -176,6 +179,30 @@ export function EditorView(props: Props) {
       updateToast(tid, `Unpublished: ${updated.title}`, "success");
     } catch (e) {
       updateToast(tid, `Unpublish failed: ${e}`, "error");
+    } finally {
+      setPublishing(false);
+    }
+  }
+
+  async function handleRollback() {
+    if (!state.config.repo_path) return;
+    setShowRollbackConfirm(false);
+    setPublishing(true);
+    const tid = addToast("Rolling back...", "warn");
+    try {
+      const updated = await rollbackEntry(props.slug);
+      await syncYamlFromDisk();
+      // Also update editor content
+      const raw = await readFile(updated.file_path);
+      const { doc, unknownImports: ui } = parseMdxToEditor(raw);
+      setEditorContent(doc);
+      setUnknownImports(ui);
+      currentDoc = doc;
+      setSaveState("saved");
+
+      updateToast(tid, `Rolled back: ${updated.title}`, "success");
+    } catch (e) {
+      updateToast(tid, `Rollback failed: ${e}`, "error");
     } finally {
       setPublishing(false);
     }
@@ -231,8 +258,9 @@ export function EditorView(props: Props) {
     if (!filePath) return;
     try {
       const raw = await readFile(filePath);
-      const { yaml: y, doc } = parseMdxToEditor(raw);
+      const { yaml: y, doc, unknownImports: ui } = parseMdxToEditor(raw);
       setYaml(y);
+      setUnknownImports(ui);
       setEditorContent(doc);
       currentDoc = doc;
       setSaveState("saved");
@@ -268,9 +296,21 @@ export function EditorView(props: Props) {
                 {publishing() ? "Publishing..." : "Publish"}
               </button>
             ) : (
-              <button class="btn" onClick={() => setShowUnpubConfirm(true)} disabled={publishing()}>
-                {publishing() ? "Working..." : "Unpublish"}
-              </button>
+              <>
+                <Show when={entry.has_changed && entry.published_hash}>
+                  <button class="btn" onClick={() => setShowRollbackConfirm(true)} disabled={publishing()}>
+                    Rollback
+                  </button>
+                </Show>
+                <Show when={entry.has_changed}>
+                  <button class="btn btn-primary" onClick={handlePublish} disabled={publishing()}>
+                    {publishing() ? "Publishing..." : "Publish"}
+                  </button>
+                </Show>
+                <button class="btn" onClick={() => setShowUnpubConfirm(true)} disabled={publishing()}>
+                  Unpublish
+                </button>
+              </>
             )}
 
             <button class="btn btn-danger" onClick={() => setShowDeleteConfirm(true)} disabled={publishing()}>
@@ -315,6 +355,17 @@ export function EditorView(props: Props) {
               confirmLabel="Unpublish"
               onConfirm={handleUnpublish}
               onCancel={() => setShowUnpubConfirm(false)}
+            />
+          )}
+
+          {showRollbackConfirm() && (
+            <ConfirmDialog
+              title="Rollback changes?"
+              message={`This will revert "${entry.title}" to its published state. All local changes will be lost.`}
+              confirmLabel="Rollback"
+              danger
+              onConfirm={handleRollback}
+              onCancel={() => setShowRollbackConfirm(false)}
             />
           )}
 

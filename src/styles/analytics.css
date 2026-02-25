@@ -1,6 +1,7 @@
 /* ==========================================================================
    ANALYTICS VIEW
-   Traffic dashboard — SVG bar chart, ranked content & country lists.
+   Traffic dashboard — SVG bar chart, KPI strip, ranked content, country,
+   device, referrer, browser, and status-code lists.
    Follows True Ledger design tokens throughout.
    ========================================================================== */
 
@@ -25,13 +26,15 @@
   pointer-events: none;
 }
 
-/* --- Header: period toggle + total --- */
+/* --- Header: controls left + KPI strip right --- */
 
 .analytics-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: var(--space-6);
+  gap: var(--space-6);
+  flex-wrap: wrap;
 }
 
 .analytics-controls {
@@ -39,25 +42,37 @@
   gap: var(--space-3);
 }
 
-.analytics-total {
+/* --- KPI strip (replaces old single total) --- */
+
+.analytics-kpi-strip {
   display: flex;
   align-items: baseline;
-  gap: var(--space-2);
+  gap: var(--space-6);
 }
 
-.analytics-total-value {
+.analytics-kpi {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1-5, var(--space-2));
+}
+
+.analytics-kpi-value {
   font-family: var(--font-serif);
   font-size: var(--font-size-h3);
   font-weight: 300;
   color: var(--color-text);
 }
 
-.analytics-total-label {
+.analytics-kpi-label {
   font-family: var(--font-mono-brand);
   font-size: var(--font-size-micro);
   text-transform: uppercase;
   letter-spacing: var(--letter-spacing-loose);
   color: var(--color-text-muted);
+}
+
+.analytics-kpi-warn .analytics-kpi-value {
+  color: var(--color-warn);
 }
 
 /* --- Sections --- */
@@ -75,7 +90,7 @@
   margin-bottom: var(--space-3);
 }
 
-/* --- Two-column grid --- */
+/* --- Two-column grid (legacy, kept for compat) --- */
 
 .analytics-grid {
   display: grid;
@@ -182,7 +197,7 @@
   min-width: var(--space-12);
 }
 
-/* --- Country List — Fixed-column ledger layout --- */
+/* --- Country / Device / Browser List — Fixed-column ledger layout --- */
 
 .analytics-country-list {
   display: flex;
@@ -248,6 +263,73 @@
   color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
   text-align: right;
+}
+
+/* --- Status Code List --- */
+
+.analytics-status-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.analytics-status-row {
+  display: grid;
+  grid-template-columns: var(--space-12) minmax(0, 1fr) var(--space-10) var(--space-12);
+  gap: var(--space-2);
+  align-items: center;
+  padding: var(--space-2) 0;
+  border-bottom: var(--space-px) solid var(--color-border-subtle, var(--color-border));
+}
+
+.analytics-status-row:last-child {
+  border-bottom: none;
+}
+
+.analytics-status-badge {
+  font-family: var(--font-mono-brand);
+  font-size: var(--font-size-micro);
+  font-weight: 600;
+  padding: var(--space-0-5) var(--space-2);
+  border-radius: var(--radius-sm);
+  text-align: center;
+  line-height: 1;
+}
+
+.analytics-status-2xx {
+  color: var(--color-success);
+  background: color-mix(in oklch, var(--color-success) 10%, transparent);
+}
+
+.analytics-status-3xx {
+  color: var(--color-accent-cool);
+  background: color-mix(in oklch, var(--color-accent-cool) 10%, transparent);
+}
+
+.analytics-status-4xx {
+  color: var(--color-warn);
+  background: color-mix(in oklch, var(--color-warn) 10%, transparent);
+}
+
+.analytics-status-5xx {
+  color: var(--color-error);
+  background: color-mix(in oklch, var(--color-error) 10%, transparent);
+}
+
+/* Status code bar fills */
+.analytics-status-2xx-bar {
+  background: var(--color-success);
+}
+
+.analytics-status-3xx-bar {
+  background: var(--color-accent-cool);
+}
+
+.analytics-status-4xx-bar {
+  background: var(--color-warn);
+}
+
+.analytics-status-5xx-bar {
+  background: var(--color-error);
 }
 
 /* --- Empty state --- */

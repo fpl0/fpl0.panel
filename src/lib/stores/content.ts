@@ -9,6 +9,7 @@ import {
   listContent,
   publish,
   unpublish,
+  rollback,
 } from "../commands";
 import { state, setState } from "./state";
 import { suppressFsChange } from "./watcher";
@@ -34,6 +35,15 @@ export async function unpublishEntry(slug: string): Promise<ContentEntry> {
   if (!repoPath) throw new Error("No repo configured");
   suppressFsChange();
   const updated = await unpublish(repoPath, slug);
+  await refreshEntries();
+  return updated;
+}
+
+export async function rollbackEntry(slug: string): Promise<ContentEntry> {
+  const repoPath = state.config.repo_path;
+  if (!repoPath) throw new Error("No repo configured");
+  suppressFsChange();
+  const updated = await rollback(repoPath, slug);
   await refreshEntries();
   return updated;
 }
