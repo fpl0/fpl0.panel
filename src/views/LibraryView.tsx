@@ -2,44 +2,62 @@
  * LibraryView — Full content management ledger.
  * Search, type/status/tag filters, sort options, paginated list.
  */
-import { createSignal, createMemo, For, Show } from "solid-js";
-import { state, openEntry } from "../lib/store";
+import { createSignal, createMemo, For, Show, onMount } from "solid-js";
+import { state, openEntry, setState } from "../lib/store";
 
 type TypeFilter = "all" | "post" | "app";
 type StatusFilter = "all" | "draft" | "published" | "changed";
 type SortBy = "created" | "modified" | "published" | "title";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 25; // Slightly higher density
 
-function formatDate(dateStr: string): string {
+function formatDateShort(dateStr: string): string {
   try {
     const d = new Date(dateStr);
-    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    return d.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "2-digit",
+    });
   } catch {
     return dateStr;
   }
 }
 
 export function LibraryView() {
+  // Read initial filters from navigation state and consume them
+  const viewState = state.view.kind === "library" ? state.view : null;
+  const initialTag = viewState?.tag ?? null;
+  const initialStatus: StatusFilter = viewState?.status ?? "all";
+  if (initialTag || viewState?.status) {
+    setState("view", { kind: "library" });
+  }
+
   const [search, setSearch] = createSignal("");
   const [typeFilter, setTypeFilter] = createSignal<TypeFilter>("all");
-  const [statusFilter, setStatusFilter] = createSignal<StatusFilter>("all");
+  const [statusFilter, setStatusFilter] = createSignal<StatusFilter>(initialStatus);
   const [sortBy, setSortBy] = createSignal<SortBy>("created");
-  const [selectedTags, setSelectedTags] = createSignal<Set<string>>(new Set());
+  const [selectedTags, setSelectedTags] = createSignal<Set<string>>(
+    initialTag ? new Set([initialTag]) : new Set(),
+  );
   const [page, setPage] = createSignal(1);
+
+  let searchRef: HTMLInputElement | undefined;
+  onMount(() => searchRef?.focus());
 
   // --- All unique tags ---
   const allTags = createMemo(() => {
     const counts = new Map<string, number>();
     for (const e of state.entries) {
+      if (!e.tags) continue;
       for (const t of e.tags) {
         counts.set(t, (counts.get(t) ?? 0) + 1);
       }
     }
-    return [...counts.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 12);
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]);
   });
+
+  const displayedTags = createMemo(() => allTags().slice(0, 20));
 
   function toggleTag(tag: string) {
     const current = selectedTags();
@@ -50,6 +68,12 @@ export function LibraryView() {
     setPage(1);
   }
 
+  // --- Stats memos ---
+  const totalCount = createMemo(() => state.entries.length);
+  const publishedCount = createMemo(() => state.entries.filter((e) => !e.is_draft).length);
+  const draftCount = createMemo(() => state.entries.filter((e) => e.is_draft).length);
+  const changedCount = createMemo(() => state.entries.filter((e) => !e.is_draft && e.has_changed).length);
+
   // --- Filtered + sorted list ---
   const filtered = createMemo(() => {
     let items = state.entries;
@@ -57,10 +81,11 @@ export function LibraryView() {
     // Text search
     const q = search().toLowerCase().trim();
     if (q) {
-      items = items.filter((e) =>
-        e.title.toLowerCase().includes(q) ||
-        e.summary.toLowerCase().includes(q) ||
-        e.slug.toLowerCase().includes(q)
+      items = items.filter(
+        (e) =>
+          e.title.toLowerCase().includes(q) ||
+          e.summary.toLowerCase().includes(q) ||
+          e.slug.toLowerCase().includes(q),
       );
     }
 
@@ -95,8 +120,14 @@ export function LibraryView() {
         const dateB = b.publication_date ?? b.created_date;
         return dateB.localeCompare(dateA);
       }
-      const dateA = sort === "modified" ? (a.modified_date ?? a.created_date) : a.created_date;
-      const dateB = sort === "modified" ? (b.modified_date ?? b.created_date) : b.created_date;
+      const dateA =
+        sort === "modified"
+          ? (a.modified_date ?? a.created_date)
+          : a.created_date;
+      const dateB =
+        sort === "modified"
+          ? (b.modified_date ?? b.created_date)
+          : b.created_date;
       return dateB.localeCompare(dateA);
     });
     return items;
@@ -106,15 +137,22 @@ export function LibraryView() {
   const filterCounts = createMemo(() => {
     const sf = statusFilter();
     const tf = typeFilter();
-    let typeAll = 0, typePost = 0, typeApp = 0;
-    let statusAll = 0, statusDraft = 0, statusPublished = 0, statusChanged = 0;
+    let typeAll = 0,
+      typePost = 0,
+      typeApp = 0;
+    let statusAll = 0,
+      statusDraft = 0,
+      statusPublished = 0,
+      statusChanged = 0;
 
     for (const e of state.entries) {
       const isPost = e.content_type === "post";
       const isApp = e.content_type === "app";
       const isDraft = e.is_draft;
       const isChanged = !isDraft && e.has_changed;
-      const matchesStatus = sf === "all" || (sf === "draft" ? isDraft : sf === "published" ? !isDraft : isChanged);
+      const matchesStatus =
+        sf === "all" ||
+        (sf === "draft" ? isDraft : sf === "published" ? !isDraft : isChanged);
       const matchesType = tf === "all" || e.content_type === tf;
 
       if (matchesStatus) {
@@ -130,22 +168,33 @@ export function LibraryView() {
       }
     }
 
-    return { typeAll, typePost, typeApp, statusAll, statusDraft, statusPublished, statusChanged };
+    return {
+      typeAll,
+      typePost,
+      typeApp,
+      statusAll,
+      statusDraft,
+      statusPublished,
+      statusChanged,
+    };
   });
 
   // --- Pagination ---
-  const totalPages = createMemo(() => Math.max(1, Math.ceil(filtered().length / PAGE_SIZE)));
+  const totalPages = createMemo(() =>
+    Math.max(1, Math.ceil(filtered().length / PAGE_SIZE)),
+  );
   const paginatedItems = createMemo(() => {
     const start = (page() - 1) * PAGE_SIZE;
     return filtered().slice(start, start + PAGE_SIZE);
   });
 
   // --- Active filter detection ---
-  const hasActiveFilters = createMemo(() =>
-    search().trim() !== "" ||
-    typeFilter() !== "all" ||
-    statusFilter() !== "all" ||
-    selectedTags().size > 0
+  const hasActiveFilters = createMemo(
+    () =>
+      search().trim() !== "" ||
+      typeFilter() !== "all" ||
+      statusFilter() !== "all" ||
+      selectedTags().size > 0,
   );
 
   function clearAllFilters() {
@@ -157,129 +206,177 @@ export function LibraryView() {
   }
 
   // Reset page when filters change
-  function setTypeAndReset(tf: TypeFilter) { setTypeFilter(tf); setPage(1); }
-  function setStatusAndReset(sf: StatusFilter) { setStatusFilter(sf); setPage(1); }
-  function setSortAndReset(s: SortBy) { setSortBy(s); setPage(1); }
+  function setTypeAndReset(tf: TypeFilter) {
+    setTypeFilter(tf);
+    setPage(1);
+  }
+  function setStatusAndReset(sf: StatusFilter) {
+    setStatusFilter(sf);
+    setPage(1);
+  }
+  function setSortAndReset(s: SortBy) {
+    setSortBy(s);
+    setPage(1);
+  }
 
-  function displayDate(entry: typeof state.entries[0]): string {
+  function displayDate(entry: (typeof state.entries)[0]): string {
     const sort = sortBy();
-    if (sort === "published") return formatDate(entry.publication_date ?? entry.created_date);
-    if (sort === "modified") return formatDate(entry.modified_date ?? entry.created_date);
-    return formatDate(entry.created_date);
+    if (sort === "published")
+      return formatDateShort(entry.publication_date ?? entry.created_date);
+    if (sort === "modified")
+      return formatDateShort(entry.modified_date ?? entry.created_date);
+    return formatDateShort(entry.created_date);
   }
 
   return (
     <div class="library-view">
       {/* ── Header ── */}
-      <div class="library-header">
-        <h2 class="library-title">Library</h2>
-        <span class="library-total">{state.entries.length} entries</span>
+      <h1 class="view-title">Library</h1>
+
+      {/* ── Stats Strip ── */}
+      <div class="library-stats-strip">
+        <div class="library-kpi">
+          <span class="library-kpi-value">{totalCount()}</span>
+          <span class="library-kpi-label">entries</span>
+        </div>
+        <span class="library-kpi-sep">&middot;</span>
+        <div class="library-kpi">
+          <span class="library-kpi-value">{publishedCount()}</span>
+          <span class="library-kpi-label">published</span>
+        </div>
+        <span class="library-kpi-sep">&middot;</span>
+        <div class="library-kpi">
+          <span class="library-kpi-value">{draftCount()}</span>
+          <span class="library-kpi-label">drafts</span>
+        </div>
+        <Show when={changedCount() > 0}>
+          <span class="library-kpi-sep">&middot;</span>
+          <div class="library-kpi">
+            <span class="library-kpi-value library-kpi-value--warn">{changedCount()}</span>
+            <span class="library-kpi-label">modified</span>
+          </div>
+        </Show>
       </div>
 
       {/* ── Search ── */}
       <input
-        class="library-search"
+        ref={searchRef}
+        class="library-search-input"
         type="text"
-        placeholder="Search titles, summaries, slugs..."
+        placeholder="Search entries..."
+        aria-label="Search entries"
         value={search()}
-        onInput={(e) => { setSearch(e.currentTarget.value); setPage(1); }}
+        onInput={(e) => {
+          setSearch(e.currentTarget.value);
+          setPage(1);
+        }}
       />
 
-      {/* ── Filter Rows ── */}
-      <div class="library-filters">
-        <div class="library-filter-row">
-          <span class="library-filter-label">Type</span>
-          <div class="filter-group">
-            <button class={`filter-chip ${typeFilter() === "all" ? "active" : ""}`} onClick={() => setTypeAndReset("all")}>
-              All <span class="filter-count">{filterCounts().typeAll}</span>
-            </button>
-            <button class={`filter-chip ${typeFilter() === "post" ? "active" : ""}`} onClick={() => setTypeAndReset("post")}>
-              Posts <span class="filter-count">{filterCounts().typePost}</span>
-            </button>
-            <button class={`filter-chip ${typeFilter() === "app" ? "active" : ""}`} onClick={() => setTypeAndReset("app")}>
-              Apps <span class="filter-count">{filterCounts().typeApp}</span>
-            </button>
-          </div>
+      {/* ── Filter Bar ── */}
+      <div class="library-filter-bar">
+        <div class="filter-group">
+          <button
+            class={`filter-chip ${typeFilter() === "all" ? "active" : ""}`}
+            onClick={() => setTypeAndReset("all")}
+          >
+            All {filterCounts().typeAll}
+          </button>
+          <button
+            class={`filter-chip ${typeFilter() === "post" ? "active" : ""}`}
+            onClick={() => setTypeAndReset("post")}
+          >
+            Posts {filterCounts().typePost}
+          </button>
+          <button
+            class={`filter-chip ${typeFilter() === "app" ? "active" : ""}`}
+            onClick={() => setTypeAndReset("app")}
+          >
+            Apps {filterCounts().typeApp}
+          </button>
         </div>
 
-        <div class="library-filter-row">
-          <span class="library-filter-label">Status</span>
-          <div class="filter-group">
-            <button class={`filter-chip ${statusFilter() === "all" ? "active" : ""}`} onClick={() => setStatusAndReset("all")}>
-              All <span class="filter-count">{filterCounts().statusAll}</span>
+        <div class="filter-group">
+          <button
+            class={`filter-chip ${statusFilter() === "all" ? "active" : ""}`}
+            onClick={() => setStatusAndReset("all")}
+          >
+            All {filterCounts().statusAll}
+          </button>
+          <button
+            class={`filter-chip ${statusFilter() === "published" ? "active" : ""}`}
+            onClick={() => setStatusAndReset("published")}
+          >
+            Pub {filterCounts().statusPublished}
+          </button>
+          <button
+            class={`filter-chip ${statusFilter() === "draft" ? "active" : ""}`}
+            onClick={() => setStatusAndReset("draft")}
+          >
+            Dft {filterCounts().statusDraft}
+          </button>
+          <Show when={filterCounts().statusChanged > 0}>
+            <button
+              class={`filter-chip ${statusFilter() === "changed" ? "active" : ""}`}
+              onClick={() => setStatusAndReset("changed")}
+            >
+              Chg {filterCounts().statusChanged}
             </button>
-            <button class={`filter-chip ${statusFilter() === "published" ? "active" : ""}`} onClick={() => setStatusAndReset("published")}>
-              Published <span class="filter-count">{filterCounts().statusPublished}</span>
-            </button>
-            <button class={`filter-chip ${statusFilter() === "draft" ? "active" : ""}`} onClick={() => setStatusAndReset("draft")}>
-              Draft <span class="filter-count">{filterCounts().statusDraft}</span>
-            </button>
-            <Show when={filterCounts().statusChanged > 0}>
-              <button class={`filter-chip ${statusFilter() === "changed" ? "active" : ""}`} onClick={() => setStatusAndReset("changed")}>
-                Changed <span class="filter-count">{filterCounts().statusChanged}</span>
+          </Show>
+        </div>
+
+        <span class="library-filter-label">Sort</span>
+        <div class="filter-group">
+          <For each={["created", "modified", "published", "title"] as SortBy[]}>
+            {(s) => (
+              <button
+                class={`filter-chip ${sortBy() === s ? "active" : ""}`}
+                onClick={() => setSortAndReset(s)}
+              >
+                {s}
               </button>
-            </Show>
-          </div>
+            )}
+          </For>
         </div>
 
-        <Show when={allTags().length > 0}>
-          <div class="library-filter-row">
-            <span class="library-filter-label">Tags</span>
-            <div class="filter-group filter-group-wrap">
-              <For each={allTags()}>
-                {([tag, count]) => (
-                  <button
-                    class={`filter-chip ${selectedTags().has(tag) ? "active" : ""}`}
-                    onClick={() => toggleTag(tag)}
-                  >
-                    {tag} <span class="filter-count">{count}</span>
-                  </button>
-                )}
-              </For>
-            </div>
-          </div>
-        </Show>
-
-        <div class="library-filter-row">
-          <span class="library-filter-label">Sort</span>
-          <div class="filter-group">
-            <button class={`filter-chip ${sortBy() === "created" ? "active" : ""}`} onClick={() => setSortAndReset("created")}>
-              Created
-            </button>
-            <button class={`filter-chip ${sortBy() === "modified" ? "active" : ""}`} onClick={() => setSortAndReset("modified")}>
-              Modified
-            </button>
-            <button class={`filter-chip ${sortBy() === "published" ? "active" : ""}`} onClick={() => setSortAndReset("published")}>
-              Published
-            </button>
-            <button class={`filter-chip ${sortBy() === "title" ? "active" : ""}`} onClick={() => setSortAndReset("title")}>
-              Title
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Result Summary ── */}
-      <div class="library-result-bar">
-        <span class="library-result-count">
-          {hasActiveFilters()
-            ? `Showing ${filtered().length} of ${state.entries.length}`
-            : `${filtered().length} entries`
-          }
-        </span>
         <Show when={hasActiveFilters()}>
-          <button class="library-clear" onClick={clearAllFilters}>
-            Clear filters
+          <button class="library-clear-btn" onClick={clearAllFilters}>
+            Clear
           </button>
         </Show>
       </div>
 
-      {/* ── Ledger List ── */}
+      {/* ── Tag Ribbon ── */}
+      <Show when={displayedTags().length > 0}>
+        <div class="library-tag-ribbon">
+          <For each={displayedTags()}>
+            {([tag, count]) => (
+              <button
+                class={`library-tag-chip ${selectedTags().has(tag) ? "active" : ""}`}
+                onClick={() => toggleTag(tag)}
+              >
+                {tag} <span class="library-tag-count">{count}</span>
+              </button>
+            )}
+          </For>
+          <Show when={allTags().length > 20}>
+            <span class="library-tag-overflow">+{allTags().length - 20} more</span>
+          </Show>
+        </div>
+      </Show>
+
+      {/* ── Result Summary (only when filtered) ── */}
+      <Show when={hasActiveFilters()}>
+        <p class="library-result-summary">
+          Showing {filtered().length} matching criteria
+        </p>
+      </Show>
+
+      {/* ── Entry List ── */}
       <Show
         when={paginatedItems().length > 0}
         fallback={
-          <div class="content-empty">
-            <p>{hasActiveFilters() ? "No entries match your filters." : "Nothing here yet."}</p>
+          <div class="library-empty">
+            <p>No entries found matching your filters.</p>
           </div>
         }
       >
@@ -288,32 +385,52 @@ export function LibraryView() {
             {(entry) => (
               <li class="post-item">
                 <div class="post-date-col">
-                  <span class={`post-status-dot ${entry.is_draft ? "draft" : entry.has_changed ? "changed" : "published"}`} title={entry.is_draft ? "Draft" : entry.has_changed ? "Modified since publication" : "Published"} />
+                  <span
+                    class={`post-status-dot ${entry.is_draft ? "draft" : entry.has_changed ? "changed" : "published"}`}
+                    title={entry.is_draft ? "Draft" : entry.has_changed ? "Modified" : "Published"}
+                  />
                   <span class="post-date">{displayDate(entry)}</span>
                 </div>
                 <div class="post-content">
-                  <span class="post-title" onClick={() => openEntry(entry)}>{entry.title}</span>
+                  <span
+                    class="post-title"
+                    tabIndex={0}
+                    role="button"
+                    onClick={() => openEntry(entry)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        openEntry(entry);
+                      }
+                    }}
+                  >
+                    {entry.title}
+                  </span>
                   <Show when={entry.summary}>
                     <p class="post-summary">{entry.summary}</p>
                   </Show>
-                  <Show when={entry.content_type === "app" || entry.tags.length > 0}>
-                    <div class="post-tags">
-                      {entry.content_type === "app" && (
-                        <span class="app-tag">app</span>
-                      )}
-                      <For each={entry.tags.filter((t) => entry.content_type !== "app" || t !== "app")}>
+                  <div class="library-meta">
+                    <span class="library-type-badge">{entry.content_type}</span>
+                    <Show when={entry.tags && entry.tags.length > 0 && entry.tags.filter(t => t !== "app").length > 0}>
+                      <span class="library-meta-sep">&middot;</span>
+                      <For each={entry.tags.filter(t => t !== "app").slice(0, 3)}>
                         {(tag) => (
-                          <span
-                            class={`tag-card ${selectedTags().has(tag) ? "tag-active" : ""}`}
-                            onClick={() => toggleTag(tag)}
-                            style={{ cursor: "pointer" }}
+                          <button
+                            class={`library-meta-tag ${selectedTags().has(tag) ? "active" : ""}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleTag(tag);
+                            }}
                           >
                             {tag}
-                          </span>
+                          </button>
                         )}
                       </For>
-                    </div>
-                  </Show>
+                      <Show when={entry.tags.filter(t => t !== "app").length > 3}>
+                        <span class="library-meta-tag-overflow">+{entry.tags.filter(t => t !== "app").length - 3}</span>
+                      </Show>
+                    </Show>
+                  </div>
                 </div>
               </li>
             )}
@@ -323,25 +440,27 @@ export function LibraryView() {
 
       {/* ── Pagination ── */}
       <Show when={totalPages() > 1}>
-        <div class="library-pagination">
-          <button
-            class="library-page-btn"
-            disabled={page() <= 1}
-            onClick={() => setPage((p) => p - 1)}
-          >
-            &larr; prev
-          </button>
-          <span class="library-page-info">
-            Page {page()} of {totalPages()}
-          </span>
-          <button
-            class="library-page-btn"
-            disabled={page() >= totalPages()}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            next &rarr;
-          </button>
-        </div>
+        <footer class="library-footer">
+          <div class="library-pagination">
+            <button
+              class="library-page-btn"
+              disabled={page() <= 1}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              &larr; Previous
+            </button>
+            <span class="library-page-info">
+              {page()} / {totalPages()}
+            </span>
+            <button
+              class="library-page-btn"
+              disabled={page() >= totalPages()}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Next &rarr;
+            </button>
+          </div>
+        </footer>
       </Show>
     </div>
   );

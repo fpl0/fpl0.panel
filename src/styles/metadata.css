@@ -73,7 +73,7 @@
   color: var(--color-text);
   width: 100%;
   padding: 0;
-  line-height: 1.2;
+  line-height: var(--line-height-tight);
   letter-spacing: var(--letter-spacing-snug);
   transform: translateY(0.02em);
   resize: none;
@@ -198,7 +198,7 @@
   color: var(--color-text);
   flex: 1;
   min-width: 80px;
-  line-height: 1.2;
+  line-height: var(--line-height-tight);
 }
 
 
@@ -220,7 +220,7 @@
   padding: var(--space-px) var(--space-3);
   border-radius: var(--radius-full);
   border: var(--space-px) solid;
-  line-height: 1.2;
+  line-height: var(--line-height-tight);
 }
 
 .status-badge.draft {
@@ -249,40 +249,70 @@
 
 /* ==========================================================================
    CREATE VIEW — New content form layout
+   Constrained width, grouped fields, clear hierarchy.
    ========================================================================== */
 
+/* --- Grid form: two-column layout for horizontal efficiency ---
+   Everything spans full width by default; only Slug and Tags
+   drop into their natural 1fr columns to sit side-by-side.
+   ─────────────────────────────────────────────────────────── */
+
 .create-view {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-6);
-  max-width: var(--content-width-narrow);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-8);
 }
 
-.create-view .metadata-field {
-  width: 100%;
+.create-view > * {
+  grid-column: 1 / -1;
 }
 
-.create-view h1 {
-  font-family: var(--font-serif);
-  font-size: var(--font-size-h1);
-  font-weight: 700;
-  line-height: var(--line-height-tight);
-  letter-spacing: var(--letter-spacing-snug);
-  color: var(--color-text);
+.create-view .view-title {
+  margin-bottom: 0;
 }
 
 .create-field {
+  display: flex;
+  flex-direction: column;
   gap: var(--space-2);
 }
 
 .create-field-lg {
+  display: flex;
+  flex-direction: column;
   gap: var(--space-3);
 }
+
+/* Slug + Tags: side by side */
+.create-view > .create-slug-field,
+.create-view > .create-tags-field {
+  grid-column: auto;
+}
+
+/* Title input gets a visible border affordance in create context */
+.create-view .metadata-title-input {
+  border-bottom: var(--space-px) solid var(--color-border);
+  padding-bottom: var(--space-2);
+  transition: border-color var(--duration-normal) var(--ease-out);
+}
+
+.create-view .metadata-title-input:focus {
+  border-bottom-color: var(--color-primary);
+}
+
+/* --- Type description --- */
 
 .create-type-desc {
   font-family: var(--font-sans);
   font-size: var(--font-size-sm);
   line-height: var(--line-height-relaxed);
   color: var(--color-text-secondary);
+}
+
+/* --- Submit button: separated from form fields --- */
+
+.create-view .btn-primary {
+  margin-top: var(--space-4);
+  grid-column: 1;
+  justify-self: start;
 }

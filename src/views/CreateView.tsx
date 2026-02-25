@@ -99,7 +99,7 @@ export function CreateView() {
 
   return (
     <div class="create-view">
-      <h1>New Content</h1>
+      <h1 class="view-title">New Content</h1>
 
       {/* Content type */}
       <div class="metadata-field create-field-lg">
@@ -125,8 +125,8 @@ export function CreateView() {
         </p>
       </div>
 
-      {/* Title */}
-      <div class="metadata-field create-field">
+      {/* Title (full width) */}
+      <div class="create-field">
         <label class="label" for="create-title">Title</label>
         <textarea
           ref={titleRef}
@@ -137,15 +137,14 @@ export function CreateView() {
           rows={1}
           onInput={(e) => {
             handleTitleChange(e.currentTarget.value);
-            // Auto-expand
             e.currentTarget.style.height = "auto";
             e.currentTarget.style.height = e.currentTarget.scrollHeight + "px";
           }}
         />
       </div>
 
-      {/* Slug */}
-      <div class="metadata-field create-field">
+      {/* Slug (col 1) */}
+      <div class="create-field create-slug-field">
         <label class="label" for="create-slug">Slug</label>
         <input
           id="create-slug"
@@ -157,26 +156,8 @@ export function CreateView() {
         />
       </div>
 
-      {/* Summary */}
-      <div class="metadata-field create-field">
-        <label class="label" for="create-summary">Summary</label>
-        <div class="summary-wrapper">
-          <textarea
-            id="create-summary"
-            class="input"
-            placeholder={`${SUMMARY_MIN}-${SUMMARY_MAX} characters`}
-            value={summary()}
-            onInput={(e) => setSummary(e.currentTarget.value)}
-            rows={3}
-          />
-          <span class={`summary-counter ${summaryStatus()}`}>
-            {summary().length}/{SUMMARY_MAX}
-          </span>
-        </div>
-      </div>
-
-      {/* Tags */}
-      <div class="metadata-field create-field-lg">
+      {/* Tags (col 2) */}
+      <div class="create-field create-tags-field">
         <label class="label" for="create-tags">Tags</label>
         <div class="tag-input-wrapper">
           <For each={tags()}>
@@ -198,6 +179,24 @@ export function CreateView() {
             onInput={(e) => setTagInput(e.currentTarget.value)}
             onKeyDown={handleTagKeyDown}
           />
+        </div>
+      </div>
+
+      {/* Summary (full width) */}
+      <div class="create-field">
+        <label class="label" for="create-summary">Summary</label>
+        <div class="summary-wrapper">
+          <textarea
+            id="create-summary"
+            class="input"
+            placeholder={`${SUMMARY_MIN}-${SUMMARY_MAX} characters`}
+            value={summary()}
+            onInput={(e) => setSummary(e.currentTarget.value)}
+            rows={3}
+          />
+          <span class={`summary-counter ${summaryStatus()}`}>
+            {summary().length}/{SUMMARY_MAX}
+          </span>
         </div>
       </div>
 
