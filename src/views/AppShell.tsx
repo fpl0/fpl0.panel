@@ -38,7 +38,7 @@ export function AppShell() {
           </Show>
         </Match>
         <Match when={state.view.kind === "settings"}>
-          <main class="main-panel">
+          <main class="main-panel wide">
             <SettingsView />
           </main>
         </Match>

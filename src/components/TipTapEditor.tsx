@@ -49,6 +49,7 @@ interface Props {
   content: JSONContent;
   onUpdate: (doc: JSONContent) => void;
   onStatsUpdate?: (words: number, characters: number) => void;
+  onEditorReady?: (methods: { setContentSilently: (doc: JSONContent) => void }) => void;
 }
 
 export function TipTapEditor(props: Props) {
@@ -61,6 +62,9 @@ export function TipTapEditor(props: Props) {
 
   // Editor reference for BubbleToolbar
   const [editorInstance, setEditorInstance] = createSignal<Editor | null>(null);
+
+  // When true, the next onUpdate is suppressed (used for imperative setContent reloads)
+  let suppressNextUpdate = false;
 
   // ---------------------------------------------------------------------------
   // Command bar — replaces window.prompt() for URL / text input
@@ -175,6 +179,11 @@ export function TipTapEditor(props: Props) {
         },
       },
       onUpdate: ({ editor: e }) => {
+        if (suppressNextUpdate) {
+          suppressNextUpdate = false;
+          updateCounts();
+          return;
+        }
         props.onUpdate(e.getJSON());
         updateCounts();
       },
@@ -188,6 +197,14 @@ export function TipTapEditor(props: Props) {
     });
 
     setEditorInstance(editor);
+
+    // Expose methods for imperative content replacement without triggering saves
+    props.onEditorReady?.({
+      setContentSilently: (content: JSONContent) => {
+        suppressNextUpdate = true;
+        editor!.commands.setContent(content);
+      },
+    });
   });
 
   onCleanup(() => {

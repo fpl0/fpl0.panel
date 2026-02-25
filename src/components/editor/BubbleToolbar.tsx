@@ -168,6 +168,19 @@ export function BubbleToolbar(props: Props) {
     setPosition({ top: Math.max(0, top), left });
     setVisible(true);
     updateActiveStates();
+
+    // Post-render: clamp horizontally so toolbar doesn't overflow the editor
+    requestAnimationFrame(() => {
+      if (!containerRef) return;
+      const toolbarWidth = containerRef.offsetWidth;
+      const editorWidth = view.dom.clientWidth;
+      const half = toolbarWidth / 2;
+      const pad = 8;
+      const clamped = Math.min(Math.max(left, half + pad), editorWidth - half - pad);
+      if (clamped !== left) {
+        setPosition({ top: Math.max(0, top), left: clamped });
+      }
+    });
   }
 
   function updateActiveStates() {

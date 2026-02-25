@@ -1,9 +1,13 @@
-import { createSignal } from "solid-js";
+import { createSignal, Switch, Match } from "solid-js";
 import { open } from "@tauri-apps/plugin-dialog";
 import { validateRepoPath, testCfConnection } from "../lib/commands";
 import { state, updateConfig, addToast } from "../lib/store";
 
+type SettingsSection = "project" | "cloudflare" | "shortcuts";
+
 export function SettingsView() {
+  const [activeSection, setActiveSection] = createSignal<SettingsSection>("project");
+
   async function changeRepo() {
     const selected = await open({ directory: true, multiple: false });
     if (!selected) return;
@@ -52,167 +56,195 @@ export function SettingsView() {
   }
 
   return (
-    <div class="settings-view">
-      <h1>Settings</h1>
-
-      <div class="settings-top-grid">
-        <div class="settings-section">
-          <h2>Repository</h2>
-          <div class="settings-row">
-            <span class="settings-label">Blog repository path</span>
-            <span class="settings-value">{state.config.repo_path ?? "Not set"}</span>
-          </div>
-          <div class="settings-action">
-            <button class="btn" onClick={changeRepo}>
-              Change Repository
-            </button>
-          </div>
-        </div>
-
-        <div class="settings-section">
-          <h2>Appearance</h2>
-          <div class="settings-row">
-            <span class="settings-label">Theme</span>
-            <span class="settings-value">{state.theme}</span>
-          </div>
-          <p class="settings-hint">
-            Use the moon/sun icon in the top bar to toggle theme.
-          </p>
-        </div>
-      </div>
-
-      <div class="settings-section settings-section-cloudflare">
-        <h2>Cloudflare Pages</h2>
-        <p class="settings-hint">
-          Connect to Cloudflare to show deployment status and traffic analytics.
-          Requires an API token with Pages:Read and Analytics:Read permissions.
-        </p>
-
-        <div class="settings-cf-fields">
-          <div class="settings-field">
-            <label class="settings-label" for="cf-account-id">Account ID</label>
-            <input
-              id="cf-account-id"
-              class="settings-input"
-              type="text"
-              value={cfAccountId()}
-              onInput={(e) => setCfAccountId(e.currentTarget.value)}
-              placeholder="e.g. 1a2b3c..."
-            />
-          </div>
-
-          <div class="settings-field">
-            <label class="settings-label" for="cf-project-name">Project Name</label>
-            <input
-              id="cf-project-name"
-              class="settings-input"
-              type="text"
-              value={cfProjectName()}
-              onInput={(e) => setCfProjectName(e.currentTarget.value)}
-              placeholder="e.g. fpl0-blog"
-            />
-          </div>
-
-          <div class="settings-field">
-            <label class="settings-label" for="cf-domain">Domain</label>
-            <input
-              id="cf-domain"
-              class="settings-input"
-              type="text"
-              value={cfDomain()}
-              onInput={(e) => setCfDomain(e.currentTarget.value)}
-              placeholder="e.g. fpl0.io"
-            />
-          </div>
-
-          <div class="settings-field">
-            <label class="settings-label" for="cf-api-token">API Token</label>
-            <input
-              id="cf-api-token"
-              class="settings-input"
-              type="password"
-              value={cfApiToken()}
-              onInput={(e) => setCfApiToken(e.currentTarget.value)}
-              placeholder="Cloudflare API token"
-            />
-          </div>
-        </div>
-
-        <div class="settings-action settings-cf-actions">
-          <button class="btn" onClick={testConnection} disabled={cfTesting()}>
-            {cfTesting() ? "Testing..." : "Test Connection"}
+    <div class="settings-layout">
+      <aside class="settings-sidebar">
+        <h1 class="settings-title">Settings</h1>
+        <nav class="settings-nav">
+          <button
+            class={`settings-nav-item ${activeSection() === "project" ? "is-active" : ""}`}
+            onClick={() => setActiveSection("project")}
+          >
+            Project
           </button>
-          <button class="btn" onClick={saveCfConfig}>
-            Save
+          <button
+            class={`settings-nav-item ${activeSection() === "cloudflare" ? "is-active" : ""}`}
+            onClick={() => setActiveSection("cloudflare")}
+          >
+            Cloudflare
           </button>
-        </div>
-      </div>
+          <button
+            class={`settings-nav-item ${activeSection() === "shortcuts" ? "is-active" : ""}`}
+            onClick={() => setActiveSection("shortcuts")}
+          >
+            Shortcuts
+          </button>
+        </nav>
+      </aside>
 
-      <div class="settings-section settings-section-shortcuts">
-        <h2>Keyboard Shortcuts</h2>
+      <main class="settings-content">
+        <Switch>
+          <Match when={activeSection() === "project"}>
+            <section class="settings-section">
+              <header class="settings-section-header">
+                <h2>Project Configuration</h2>
+                <p class="settings-description">
+                  Configure your blog repository and local environment settings.
+                </p>
+              </header>
 
-        <div class="settings-shortcuts-grid">
-          <div class="settings-shortcut-group">
-            <h3 class="settings-shortcut-heading">Global</h3>
-            <div class="settings-shortcut-table">
-              <div class="settings-shortcut-row">
-                <kbd class="settings-kbd">⌘K</kbd>
-                <span>Search</span>
+              <div class="settings-group">
+                <div class="settings-row">
+                  <div class="settings-info">
+                    <label class="settings-label">Content Directory</label>
+                    <p class="settings-hint">
+                      The local directory containing your MDX files and assets.
+                    </p>
+                  </div>
+                  <div class="settings-value-with-action">
+                    <span class="settings-path-value">{state.config.repo_path ?? "Not configured"}</span>
+                    <button class="btn" onClick={changeRepo}>
+                      Change Directory
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div class="settings-shortcut-row">
-                <kbd class="settings-kbd">⌘N</kbd>
-                <span>New content</span>
-              </div>
-              <div class="settings-shortcut-row">
-                <kbd class="settings-kbd">⌘L</kbd>
-                <span>Content list</span>
-              </div>
-              <div class="settings-shortcut-row">
-                <kbd class="settings-kbd">⌘,</kbd>
-                <span>Settings</span>
-              </div>
-              <div class="settings-shortcut-row">
-                <kbd class="settings-kbd">⌘/</kbd>
-                <span>Shortcuts reference</span>
-              </div>
-            </div>
-          </div>
+            </section>
+          </Match>
 
-          <div class="settings-shortcut-group">
-            <h3 class="settings-shortcut-heading">Editor</h3>
-            <div class="settings-shortcut-table">
-              <div class="settings-shortcut-row">
-                <kbd class="settings-kbd">⌘S</kbd>
-                <span>Save</span>
+          <Match when={activeSection() === "cloudflare"}>
+            <section class="settings-section">
+              <header class="settings-section-header">
+                <h2>Cloudflare</h2>
+                <p class="settings-description">
+                  Connect your Cloudflare account to view site traffic analytics and performance data directly in the panel.
+                </p>
+              </header>
+
+              <div class="settings-group">
+                <div class="settings-cf-grid">
+                  <div class="settings-field">
+                    <label class="settings-label" for="cf-account-id">Account ID</label>
+                    <input
+                      id="cf-account-id"
+                      class="settings-input"
+                      type="text"
+                      value={cfAccountId()}
+                      onInput={(e) => setCfAccountId(e.currentTarget.value)}
+                      placeholder="Cloudflare Account ID"
+                    />
+                  </div>
+
+                  <div class="settings-field">
+                    <label class="settings-label" for="cf-project-name">Project Name</label>
+                    <input
+                      id="cf-project-name"
+                      class="settings-input"
+                      type="text"
+                      value={cfProjectName()}
+                      onInput={(e) => setCfProjectName(e.currentTarget.value)}
+                      placeholder="e.g. fpl0-blog"
+                    />
+                  </div>
+
+                  <div class="settings-field">
+                    <label class="settings-label" for="cf-domain">Site Domain</label>
+                    <input
+                      id="cf-domain"
+                      class="settings-input"
+                      type="text"
+                      value={cfDomain()}
+                      onInput={(e) => setCfDomain(e.currentTarget.value)}
+                      placeholder="e.g. fpl0.io"
+                    />
+                  </div>
+
+                  <div class="settings-field">
+                    <label class="settings-label" for="cf-api-token">API Token</label>
+                    <input
+                      id="cf-api-token"
+                      class="settings-input"
+                      type="password"
+                      value={cfApiToken()}
+                      onInput={(e) => setCfApiToken(e.currentTarget.value)}
+                      placeholder="Pages:Read & Analytics:Read required"
+                    />
+                  </div>
+                </div>
+
+                <div class="settings-cf-actions">
+                  <button class="btn" onClick={testConnection} disabled={cfTesting()}>
+                    {cfTesting() ? "Testing Connection..." : "Test Connection"}
+                  </button>
+                  <button class="btn btn-primary" onClick={saveCfConfig}>
+                    Save Changes
+                  </button>
+                </div>
               </div>
-              <div class="settings-shortcut-row">
-                <kbd class="settings-kbd">⌘⇧P</kbd>
-                <span>Publish</span>
+            </section>
+          </Match>
+
+          <Match when={activeSection() === "shortcuts"}>
+            <section class="settings-section">
+              <header class="settings-section-header">
+                <h2>Shortcuts Reference</h2>
+                <p class="settings-description">
+                  Master the panel with keyboard shortcuts designed for editorial speed.
+                </p>
+              </header>
+
+              <div class="settings-shortcuts-layout">
+                <div class="settings-shortcut-category">
+                  <h3>Navigation</h3>
+                  <div class="settings-shortcut-list">
+                    <div class="settings-shortcut-item">
+                      <span class="shortcut-desc">Open Search</span>
+                      <kbd class="settings-kbd">⌘K</kbd>
+                    </div>
+                    <div class="settings-shortcut-item">
+                      <span class="shortcut-desc">Create New Content</span>
+                      <kbd class="settings-kbd">⌘N</kbd>
+                    </div>
+                    <div class="settings-shortcut-item">
+                      <span class="shortcut-desc">Content Library</span>
+                      <kbd class="settings-kbd">⌘L</kbd>
+                    </div>
+                    <div class="settings-shortcut-item">
+                      <span class="shortcut-desc">Open Settings</span>
+                      <kbd class="settings-kbd">⌘,</kbd>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="settings-shortcut-category">
+                  <h3>Editorial</h3>
+                  <div class="settings-shortcut-list">
+                    <div class="settings-shortcut-item">
+                      <span class="shortcut-desc">Save Draft</span>
+                      <kbd class="settings-kbd">⌘S</kbd>
+                    </div>
+                    <div class="settings-shortcut-item">
+                      <span class="shortcut-desc">Publish Changes</span>
+                      <kbd class="settings-kbd">⌘⇧P</kbd>
+                    </div>
+                    <div class="settings-shortcut-item">
+                      <span class="shortcut-desc">Format Bold</span>
+                      <kbd class="settings-kbd">⌘B</kbd>
+                    </div>
+                    <div class="settings-shortcut-item">
+                      <span class="shortcut-desc">Format Italic</span>
+                      <kbd class="settings-kbd">⌘I</kbd>
+                    </div>
+                    <div class="settings-shortcut-item">
+                      <span class="shortcut-desc">Slash Commands</span>
+                      <kbd class="settings-kbd">/</kbd>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div class="settings-shortcut-row">
-                <kbd class="settings-kbd">/</kbd>
-                <span>Slash commands</span>
-              </div>
-              <div class="settings-shortcut-row">
-                <kbd class="settings-kbd">⌘B</kbd>
-                <span>Bold</span>
-              </div>
-              <div class="settings-shortcut-row">
-                <kbd class="settings-kbd">⌘I</kbd>
-                <span>Italic</span>
-              </div>
-              <div class="settings-shortcut-row">
-                <kbd class="settings-kbd">⌘E</kbd>
-                <span>Inline code</span>
-              </div>
-              <div class="settings-shortcut-row">
-                <kbd class="settings-kbd">⌘K</kbd>
-                <span>Link</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+            </section>
+          </Match>
+        </Switch>
+      </main>
     </div>
   );
 }

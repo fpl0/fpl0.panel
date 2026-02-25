@@ -198,6 +198,16 @@ function serializeInline(nodes: JSONContent[]): string {
   return nodes.map(serializeInlineNode).join("");
 }
 
+/** Canonical mark priority — outermost wraps first (lowest number = outermost). */
+const MARK_PRIORITY: Record<string, number> = {
+  link: 0,
+  bold: 1,
+  italic: 2,
+  strike: 3,
+  underline: 4,
+  code: 5,
+};
+
 function serializeInlineNode(node: JSONContent): string {
   if (node.type === "text") {
     const marks = node.marks ?? [];
@@ -206,7 +216,11 @@ function serializeInlineNode(node: JSONContent): string {
       return node.text ?? "";
     }
     let text = node.text ?? "";
-    for (const mark of marks) {
+    // Sort marks so outermost (lowest priority) wraps last — iterate innermost-first
+    const sorted = [...marks].sort(
+      (a, b) => (MARK_PRIORITY[b.type] ?? 99) - (MARK_PRIORITY[a.type] ?? 99),
+    );
+    for (const mark of sorted) {
       switch (mark.type) {
         case "bold":
           text = `**${text}**`;

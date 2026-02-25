@@ -47,7 +47,9 @@ export function EditorView(props: Props) {
   const [wordCount, setWordCount] = createSignal(0);
   const [charCount, setCharCount] = createSignal(0);
   let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+  let saving = false;
   let currentDoc: JSONContent | null = null;
+  let editorMethods: { setContentSilently: (doc: JSONContent) => void } | null = null;
 
   // Snapshot file_path at mount so async operations don't crash if entry disappears
   let filePath = "";
@@ -102,6 +104,22 @@ export function EditorView(props: Props) {
 
   async function saveToDisk() {
     if (!currentDoc || !filePath) return;
+    if (saving) return;
+
+    // Guard: refuse to save an empty document (e.g. select-all + delete)
+    const hasText = currentDoc.content?.some((n) => {
+      if (n.type === "paragraph" || n.type === "heading") {
+        return n.content?.some((c) => c.text && c.text.trim().length > 0);
+      }
+      // Block-level elements like codeBlock, figure, etc. count as content
+      return n.type !== "paragraph" && n.type !== "heading";
+    });
+    if (!hasText) {
+      setSaveState("unsaved");
+      return;
+    }
+
+    saving = true;
     setSaveState("saving");
     try {
       suppressFsChange();
@@ -111,7 +129,8 @@ export function EditorView(props: Props) {
     } catch (e) {
       setSaveState("unsaved");
       addToast(`Save failed: ${e}`, "error");
-      return;
+    } finally {
+      saving = false;
     }
     // Refresh entries so has_changed (and metadata) stay current in the store.
     // Runs outside try/catch — a refresh failure must not revert save state.
@@ -187,6 +206,7 @@ export function EditorView(props: Props) {
   async function handleRollback() {
     if (!state.config.repo_path) return;
     setShowRollbackConfirm(false);
+    if (saveTimeout) { clearTimeout(saveTimeout); saveTimeout = null; }
     setPublishing(true);
     const tid = addToast("Rolling back...", "warn");
     try {
@@ -195,9 +215,13 @@ export function EditorView(props: Props) {
       // Also update editor content
       const raw = await readFile(updated.file_path);
       const { doc, unknownImports: ui } = parseMdxToEditor(raw);
-      setEditorContent(doc);
       setUnknownImports(ui);
       currentDoc = doc;
+      if (editorMethods) {
+        editorMethods.setContentSilently(doc);
+      } else {
+        setEditorContent(doc);
+      }
       setSaveState("saved");
 
       updateToast(tid, `Rolled back: ${updated.title}`, "success");
@@ -228,6 +252,7 @@ export function EditorView(props: Props) {
     if (e.metaKey || e.ctrlKey) {
       if (e.key === "s") {
         e.preventDefault();
+        if (saveTimeout) { clearTimeout(saveTimeout); saveTimeout = null; }
         saveToDisk();
       }
       if (e.shiftKey && e.key === "P") {
@@ -256,13 +281,19 @@ export function EditorView(props: Props) {
 
   async function reloadFromDisk() {
     if (!filePath) return;
+    if (saveTimeout) { clearTimeout(saveTimeout); saveTimeout = null; }
     try {
       const raw = await readFile(filePath);
       const { yaml: y, doc, unknownImports: ui } = parseMdxToEditor(raw);
       setYaml(y);
       setUnknownImports(ui);
-      setEditorContent(doc);
       currentDoc = doc;
+      // Imperative content update avoids editor destroy/recreate flicker
+      if (editorMethods) {
+        editorMethods.setContentSilently(doc);
+      } else {
+        setEditorContent(doc);
+      }
       setSaveState("saved");
       await refreshEntries();
     } catch (err) {
@@ -329,7 +360,7 @@ export function EditorView(props: Props) {
           <div class="editor-layout">
             <main class="editor-primary">
               <Show when={!loading() && editorContent()} fallback={<div class="content-empty"><p>Loading...</p></div>}>
-                <TipTapEditor content={editorContent()!} onUpdate={handleEditorUpdate} onStatsUpdate={(w, c) => { setWordCount(w); setCharCount(c); }} />
+                <TipTapEditor content={editorContent()!} onUpdate={handleEditorUpdate} onStatsUpdate={(w, c) => { setWordCount(w); setCharCount(c); }} onEditorReady={(methods) => { editorMethods = methods; }} />
               </Show>
             </main>
             <aside class="editor-sidebar">

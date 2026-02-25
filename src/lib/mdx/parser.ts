@@ -37,7 +37,7 @@ export function mdastToProseMirror(node: MdastNode): JSONContent | null {
 
     case "paragraph": {
       const content = inlineChildren(node);
-      if (content.length === 0) return null;
+      if (content.length === 0) return { type: "paragraph" };
       return { type: "paragraph", content };
     }
 
@@ -314,6 +314,14 @@ export function mdastToProseMirror(node: MdastNode): JSONContent | null {
         return {
           type: "paragraph",
           content: [{ type: "text", text: node.value }],
+        };
+      }
+      // Preserve unknown block nodes as passthrough so they survive roundtrip
+      if (node.type && node.children) {
+        console.warn(`[mdx-parser] Unknown block node type: "${node.type}" — wrapping in passthroughBlock`);
+        return {
+          type: "passthroughBlock",
+          attrs: { content: serializeMdxElement(node) },
         };
       }
       return null;
