@@ -14,6 +14,17 @@
   margin-bottom: var(--space-4);
 }
 
+/* --- Loading overlay (filter switch) --- */
+
+.analytics-content {
+  transition: opacity var(--duration-normal) var(--ease-out);
+}
+
+.analytics-loading {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
 /* --- Header: period toggle + total --- */
 
 .analytics-header {
@@ -70,6 +81,10 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space-8);
+}
+
+.analytics-grid > * {
+  min-width: 0;
 }
 
 /* --- SVG Bar Chart --- */

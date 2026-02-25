@@ -63,13 +63,15 @@ function BarChart(props: { data: { date: string; count: number }[] }) {
             const x = () => i() * (barW() + barGap);
             const barY = () => topPad + chartH - barH();
 
-            // Count labels: show every Nth to avoid overlap
-            const countStep = n <= 7 ? 1 : n <= 14 ? 2 : 5;
-            const showCount = () => i() % countStep === 0 && d.count > 0;
+            const showCount = () => d.count > 0;
 
-            // Date labels: first, last, and evenly spaced
+            // Date labels: first, last, and evenly spaced (skip last if too close to a step)
             const dateStep = n <= 7 ? 1 : n <= 14 ? 2 : 7;
-            const showDate = () => i() === 0 || i() === n - 1 || i() % dateStep === 0;
+            const showDate = () => {
+              if (i() === 0 || i() % dateStep === 0) return true;
+              if (i() === n - 1) return (n - 1) % dateStep >= 3;
+              return false;
+            };
 
             return (
               <g>
@@ -116,7 +118,7 @@ export function AnalyticsView() {
   const [analytics, setAnalytics] = createSignal<CfAnalytics | null>(null);
   const [loading, setLoading] = createSignal(true);
   const [error, setError] = createSignal<string | null>(null);
-  const [period, setPeriod] = createSignal<Period>(30);
+  const [period, setPeriod] = createSignal<Period>(7);
   const [metric, setMetric] = createSignal<MetricMode>("engagement");
 
   // Initial load: serve cached data instantly, refresh if stale
@@ -187,7 +189,7 @@ export function AnalyticsView() {
 
       <Show when={analytics()}>
         {(a) => (
-          <>
+          <div class={`analytics-content ${loading() ? "analytics-loading" : ""}`}>
             {/* Controls: metric toggle + period toggle + total */}
             <div class="analytics-header">
               <div class="analytics-controls">
@@ -297,7 +299,7 @@ export function AnalyticsView() {
                 </Show>
               </div>
             </div>
-          </>
+          </div>
         )}
       </Show>
     </div>

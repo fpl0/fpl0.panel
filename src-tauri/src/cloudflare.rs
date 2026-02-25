@@ -113,9 +113,9 @@ pub async fn fetch_analytics(
     engagement: bool,
 ) -> Result<CfAnalytics, String> {
     let now = chrono::Utc::now();
-    let start_date = (now - chrono::Duration::days(days as i64))
-        .format("%Y-%m-%d")
-        .to_string();
+    // days-1 so that "7d" = today + 6 prior days = 7 bars exactly
+    let start = now - chrono::Duration::days((days - 1) as i64);
+    let start_date = start.format("%Y-%m-%d").to_string();
     let end_date = now.format("%Y-%m-%d").to_string();
 
     // Adaptive queries: last 24h only (free-zone safe)
@@ -209,9 +209,15 @@ pub async fn fetch_analytics(
             *daily_map.entry(date).or_default() += count;
         }
     }
-    let daily_requests: Vec<CfDailyCount> = daily_map
-        .into_iter()
-        .map(|(date, count)| CfDailyCount { date, count })
+    // Build a contiguous series so every day in the range has an entry (0 if missing)
+    let daily_requests: Vec<CfDailyCount> = (0..days)
+        .map(|i| {
+            let date = (start + chrono::Duration::days(i as i64))
+                .format("%Y-%m-%d")
+                .to_string();
+            let count = daily_map.get(&date).copied().unwrap_or(0);
+            CfDailyCount { date, count }
+        })
         .collect();
 
     let total_requests: u64 = daily_requests.iter().map(|d| d.count).sum();
