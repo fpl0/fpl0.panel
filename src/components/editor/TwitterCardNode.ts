@@ -212,6 +212,9 @@ export const TwitterCardNode = Node.create({
           if (editing && inputEl && event.target === inputEl) return true;
           return false;
         },
+        ignoreMutation() {
+          return true;
+        },
         update(updatedNode) {
           if (updatedNode.type.name !== "twitterCard") return false;
           currentNode = updatedNode;

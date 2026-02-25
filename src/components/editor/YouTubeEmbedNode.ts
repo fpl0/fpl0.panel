@@ -151,7 +151,7 @@ export const YouTubeEmbedNode = Node.create({
       function extractVideoId(input: string): string {
         // Support pasting full YouTube URLs
         const urlMatch = input.match(
-          /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+          /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
         );
         if (urlMatch) return urlMatch[1];
         // Assume it's already a video ID
@@ -209,6 +209,9 @@ export const YouTubeEmbedNode = Node.create({
         stopEvent(event: Event) {
           if (editing && inputContainer?.contains(event.target as globalThis.Node)) return true;
           return false;
+        },
+        ignoreMutation() {
+          return true;
         },
         update(updatedNode) {
           if (updatedNode.type.name !== "youtubeEmbed") return false;

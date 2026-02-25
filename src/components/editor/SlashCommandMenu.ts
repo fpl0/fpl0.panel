@@ -3,106 +3,93 @@
  * Type "/" on an empty line to open a block picker.
  * Keyboard navigable (arrow keys + Enter), filterable.
  */
-import { type ChainedCommands, type Editor, Extension } from "@tiptap/core";
+import { type Editor, Extension } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 
 export interface SlashMenuItem {
+  id: string;
   title: string;
   description: string;
   icon: string;
   group: string;
-  command: (chain: ChainedCommands) => void;
+  command: (editor: Editor) => void;
 }
 
 const SLASH_ITEMS: SlashMenuItem[] = [
   // --- Text ---
   {
+    id: "heading2",
     title: "Heading 2",
     description: "Large section heading",
     icon: "H2",
     group: "Text",
-    command: (chain) => {
-      chain.focus().toggleHeading({ level: 2 }).run();
+    command: (editor) => {
+      editor.chain().focus().toggleHeading({ level: 2 }).run();
     },
   },
   {
+    id: "heading3",
     title: "Heading 3",
     description: "Subsection heading",
     icon: "H3",
     group: "Text",
-    command: (chain) => {
-      chain.focus().toggleHeading({ level: 3 }).run();
+    command: (editor) => {
+      editor.chain().focus().toggleHeading({ level: 3 }).run();
     },
   },
   {
-    title: "Paragraph",
-    description: "Plain text block",
-    icon: "¶",
-    group: "Text",
-    command: (chain) => {
-      chain.focus().setParagraph().run();
-    },
-  },
-  {
+    id: "blockquote",
     title: "Blockquote",
     description: "Quoted text block",
     icon: "\u201C",
     group: "Text",
-    command: (chain) => {
-      chain.focus().toggleBlockquote().run();
+    command: (editor) => {
+      editor.chain().focus().toggleBlockquote().run();
     },
   },
 
   // --- Lists ---
   {
+    id: "bulletList",
     title: "Bullet List",
     description: "Unordered list",
     icon: "•",
     group: "Lists",
-    command: (chain) => {
-      chain.focus().toggleBulletList().run();
+    command: (editor) => {
+      editor.chain().focus().toggleBulletList().run();
     },
   },
   {
+    id: "orderedList",
     title: "Ordered List",
     description: "Numbered list",
     icon: "1.",
     group: "Lists",
-    command: (chain) => {
-      chain.focus().toggleOrderedList().run();
+    command: (editor) => {
+      editor.chain().focus().toggleOrderedList().run();
     },
   },
   {
+    id: "taskList",
     title: "Task List",
     description: "Checklist with checkboxes",
     icon: "\u2610",
     group: "Lists",
-    command: (chain) => {
-      chain.focus().toggleTaskList().run();
+    command: (editor) => {
+      editor.chain().focus().toggleTaskList().run();
     },
   },
 
   // --- Media ---
   {
-    title: "Image",
-    description: "Plain image embed",
-    icon: "\u25A1",
-    group: "Media",
-    command: (chain) => {
-      chain
-        .focus()
-        .insertContent({ type: "image", attrs: { src: "", alt: "", title: null } })
-        .run();
-    },
-  },
-  {
+    id: "figure",
     title: "Figure",
     description: "Image with caption and label",
     icon: "\u25A3",
     group: "Media",
-    command: (chain) => {
-      chain
+    command: (editor) => {
+      editor.chain()
         .focus()
         .insertContent({
           type: "figure",
@@ -112,24 +99,26 @@ const SLASH_ITEMS: SlashMenuItem[] = [
     },
   },
   {
+    id: "youtube",
     title: "YouTube",
     description: "Embed YouTube video",
     icon: "▶",
     group: "Media",
-    command: (chain) => {
-      chain
+    command: (editor) => {
+      editor.chain()
         .focus()
         .insertContent({ type: "youtubeEmbed", attrs: { videoId: "", title: "" } })
         .run();
     },
   },
   {
+    id: "twitter",
     title: "Twitter / X",
     description: "Embed tweet",
     icon: "X",
     group: "Media",
-    command: (chain) => {
-      chain
+    command: (editor) => {
+      editor.chain()
         .focus()
         .insertContent({ type: "twitterCard", attrs: { id: "" } })
         .run();
@@ -138,24 +127,26 @@ const SLASH_ITEMS: SlashMenuItem[] = [
 
   // --- Code ---
   {
+    id: "codeBlock",
     title: "Code Block",
     description: "Syntax highlighted code",
     icon: "{ }",
     group: "Code",
-    command: (chain) => {
-      chain
+    command: (editor) => {
+      editor.chain()
         .focus()
         .insertContent({ type: "codeBlock", attrs: { language: null } })
         .run();
     },
   },
   {
+    id: "mermaid",
     title: "Mermaid",
     description: "Mermaid diagram (rendered at build time)",
     icon: "◇",
     group: "Code",
-    command: (chain) => {
-      chain
+    command: (editor) => {
+      editor.chain()
         .focus()
         .insertContent({
           type: "mermaidDiagram",
@@ -167,12 +158,13 @@ const SLASH_ITEMS: SlashMenuItem[] = [
 
   // --- Layout ---
   {
+    id: "details",
     title: "Details",
     description: "Collapsible section",
     icon: "▸",
     group: "Layout",
-    command: (chain) => {
-      chain
+    command: (editor) => {
+      editor.chain()
         .focus()
         .insertContent({
           type: "details",
@@ -183,30 +175,117 @@ const SLASH_ITEMS: SlashMenuItem[] = [
     },
   },
   {
+    id: "horizontalRule",
     title: "Horizontal Rule",
     description: "Divider line",
     icon: "—",
     group: "Layout",
-    command: (chain) => {
-      chain.focus().setHorizontalRule().run();
+    command: (editor) => {
+      editor.chain().focus().setHorizontalRule().run();
     },
   },
   {
+    id: "table",
     title: "Table",
     description: "3×3 data table",
     icon: "⊞",
     group: "Layout",
-    command: (chain) => {
-      chain.focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
+    command: (editor) => {
+      editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
     },
   },
   {
+    id: "definitionList",
+    title: "Definition List",
+    description: "Term and definition pairs",
+    icon: "dl",
+    group: "Layout",
+    command: (editor) => {
+      const from = editor.state.selection.from;
+
+      editor.chain()
+        .focus()
+        .insertContent({
+          type: "descriptionList",
+          content: [
+            { type: "descriptionTerm" },
+            { type: "descriptionDetails", content: [{ type: "paragraph" }] },
+          ],
+        })
+        .run();
+
+      // Place cursor inside the <dt> so the user can immediately type the term
+      let placed = false;
+      const scanFrom = Math.max(0, from - 2);
+      const scanTo = Math.min(editor.state.doc.content.size, from + 20);
+      editor.state.doc.nodesBetween(scanFrom, scanTo, (node, pos) => {
+        if (!placed && node.type.name === "descriptionTerm") {
+          editor.commands.setTextSelection(pos + 1);
+          placed = true;
+          return false;
+        }
+      });
+    },
+  },
+  {
+    id: "footnote",
     title: "Footnote",
     description: "Add footnote reference and definition",
     icon: "¹",
     group: "Layout",
-    command: (_chain) => {
-      // Handled specially in the mousedown handler below
+    command: (editor) => {
+      const { state } = editor;
+      const { $from } = state.selection;
+
+      // Count existing footnotes to generate the next identifier
+      let count = 0;
+      state.doc.descendants((node) => {
+        if (node.type.name === "footnoteRef") count++;
+      });
+      const identifier = String(count + 1);
+
+      // The slash menu leaves the cursor in an empty paragraph.
+      // Footnote refs belong inline at the end of text, not standalone.
+      // Search for a valid target BEFORE deleting, so fallback state is clean.
+      if ($from.parent.content.size === 0 && $from.before($from.depth) > 0) {
+        const before = $from.before($from.depth);
+        const after = $from.after($from.depth);
+
+        // Find the last textblock that accepts inline nodes.
+        // Skip code blocks (content: "text*") and footnoteDefs (would corrupt the definition).
+        const refType = state.schema.nodes.footnoteRef;
+        let refPos: number | null = null;
+        state.doc.nodesBetween(0, before, (node, pos) => {
+          if (
+            node.isTextblock &&
+            node.type.name !== "footnoteDef" &&
+            node.type.contentMatch.matchType(refType)
+          ) {
+            refPos = pos + 1 + node.content.size;
+          }
+        });
+
+        if (refPos !== null) {
+          // Safe to delete — we have a valid target.
+          // Positions before the deleted range are unchanged.
+          editor.view.dispatch(state.tr.delete(before, after));
+
+          editor.chain()
+            .insertContentAt(refPos, { type: "footnoteRef", attrs: { identifier } })
+            .run();
+
+          const endPos = editor.state.doc.content.size;
+          editor.chain()
+            .insertContentAt(endPos, { type: "footnoteDef", attrs: { identifier } })
+            .run();
+
+          editor.commands.focus("end");
+          return;
+        }
+      }
+
+      // Fallback: insert at current position (e.g. non-empty paragraph, or no valid target found)
+      insertFootnote(editor);
     },
   },
 ];
@@ -389,12 +468,7 @@ export const SlashCommandMenu = Extension.create({
                       view.dispatch(tr);
                     }
 
-                    // Special case for footnote
-                    if (item.title === "Footnote") {
-                      insertFootnote(editor);
-                    } else {
-                      item.command(editor.chain());
-                    }
+                    item.command(editor);
                   });
 
                   itemsContainer.appendChild(row);
@@ -427,12 +501,11 @@ export const SlashCommandMenu = Extension.create({
                         } satisfies SlashMenuState);
                         view.dispatch(tr);
                       }
-                      if (selected.title === "Footnote") {
-                        insertFootnote(editor);
-                      } else {
-                        selected.command(editor.chain());
-                      }
+                      selected.command(editor);
                     }
+                    document.removeEventListener("keydown", handleMenuKeyDown, true);
+                    menu.remove();
+                  } else if (e.key === "Escape") {
                     document.removeEventListener("keydown", handleMenuKeyDown, true);
                     menu.remove();
                   }

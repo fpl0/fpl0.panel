@@ -158,7 +158,8 @@ export const PassthroughBlockNode = Node.create({
         editor.commands.focus();
       }
 
-      header.addEventListener("click", (e) => {
+      dom.addEventListener("click", (e) => {
+        if (editing) return;
         e.preventDefault();
         e.stopPropagation();
         startEdit();

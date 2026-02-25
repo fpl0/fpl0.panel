@@ -152,7 +152,8 @@ export function BubbleToolbar(props: Props) {
     }
 
     // Don't show in code blocks or atom nodes
-    if (props.editor.isActive("codeBlock") || props.editor.isActive("mermaidDiagram")) {
+    const suppressTypes = ["codeBlock", "mermaidDiagram", "figure", "youtubeEmbed", "twitterCard", "passthroughBlock"];
+    if (suppressTypes.some((t) => props.editor.isActive(t))) {
       setVisible(false);
       return;
     }
@@ -162,7 +163,7 @@ export function BubbleToolbar(props: Props) {
     const editorRect = view.dom.getBoundingClientRect();
 
     const top = start.top - editorRect.top - 50;
-    const left = (start.left + end.left) / 2 - editorRect.left;
+    const left = (start.top !== end.top ? start.left : (start.left + end.left) / 2) - editorRect.left;
 
     setPosition({ top: Math.max(0, top), left });
     setVisible(true);

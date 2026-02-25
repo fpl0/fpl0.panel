@@ -159,6 +159,7 @@ export const DetailsNode = Node.create({
         }
         summaryText.style.display = "";
         editHint.style.display = "";
+        editor.commands.focus();
       }
 
       // Click to edit (changed from dbl-click)

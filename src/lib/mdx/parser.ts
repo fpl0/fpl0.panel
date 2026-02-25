@@ -220,36 +220,58 @@ export function mdastToProseMirror(node: MdastNode): JSONContent | null {
         };
       }
 
-      if (name === "dl" || name === "dt" || name === "dd") {
-        const typeMap: Record<string, string> = {
-          dl: "descriptionList",
-          dt: "descriptionTerm",
-          dd: "descriptionDetails",
+      if (name === "dl") {
+        // Flatten paragraph wrappers remark-mdx may insert around dt/dd
+        const rawChildren = (node.children ?? []).flatMap(c =>
+          c.type === "paragraph" ? (c.children ?? []) : c,
+        );
+        const children = rawChildren
+          .map(mdastToProseMirror)
+          .filter((n): n is JSONContent => n !== null)
+          .filter(c => c.type === "descriptionTerm" || c.type === "descriptionDetails");
+        return {
+          type: "descriptionList",
+          content: children.length > 0 ? children : undefined,
         };
-        
-        let rawChildren = node.children ?? [];
-        if (name === "dl") {
-          rawChildren = rawChildren.flatMap(c => c.type === "paragraph" ? (c.children ?? []) : c);
-        }
-        
-        let children = rawChildren
+      }
+
+      if (name === "dt") {
+        // dt expects inline* content — unwrap paragraph wrappers then extract inline nodes
+        const flatChildren = (node.children ?? []).flatMap(c =>
+          c.type === "paragraph" ? (c.children ?? []) : [c],
+        );
+        const content = inlineChildren({ ...node, children: flatChildren });
+        return {
+          type: "descriptionTerm",
+          content: content.length > 0 ? content : undefined,
+        };
+      }
+
+      if (name === "dd") {
+        // dd expects block+ content — ensure children are block nodes
+        const children = (node.children ?? [])
           .map(mdastToProseMirror)
           .filter((n): n is JSONContent => n !== null);
-          
-        if (name === "dd" && children.length > 0) {
-          const hasInline = children.some(c => c.type === "text" || c.type === "image" || c.type === "footnoteRef");
-          if (hasInline) {
-            children = [{ type: "paragraph", content: children }];
+        // If all children are inline (text that fell through default), wrap in a paragraph
+        const allInline = children.length > 0 && children.every(c =>
+          c.type === "text" || c.type === "image" || c.type === "footnoteRef",
+        );
+        const blockChildren = allInline
+          ? [{ type: "paragraph", content: children }]
+          : children;
+        // If children are still empty (bare text nodes), try inlineChildren as fallback
+        if (blockChildren.length === 0) {
+          const inline = inlineChildren(node);
+          if (inline.length > 0) {
+            return {
+              type: "descriptionDetails",
+              content: [{ type: "paragraph", content: inline }],
+            };
           }
         }
-        
-        if (name === "dl") {
-          children = children.filter(c => c.type === "descriptionTerm" || c.type === "descriptionDetails");
-        }
-          
         return {
-          type: typeMap[name],
-          content: children.length > 0 ? children : undefined,
+          type: "descriptionDetails",
+          content: blockChildren.length > 0 ? blockChildren : [{ type: "paragraph" }],
         };
       }
 
@@ -365,7 +387,7 @@ function mdastInline(node: MdastNode): JSONContent | JSONContent[] | null {
       return {
         type: "text",
         text: serializeMdxElement(node),
-        marks: [{ type: "code" }],
+        marks: [{ type: "inlineJsx" }],
       };
     }
 

@@ -283,6 +283,19 @@ export const CodeBlockNode = Node.create({
       },
       "Shift-Tab": ({ editor }) => {
         if (editor.isActive("codeBlock")) {
+          const { state, dispatch } = editor.view;
+          const { $from } = state.selection;
+          // Get text from the start of the code block to cursor
+          const textBefore = state.doc.textBetween($from.start(), $from.pos, "\0", "\0");
+          const lastNewline = textBefore.lastIndexOf("\n");
+          const lineStartOffset = lastNewline === -1 ? 0 : lastNewline + 1;
+          const lineStartPos = $from.start() + lineStartOffset;
+          // Check leading spaces at line start
+          const afterStart = state.doc.textBetween(lineStartPos, Math.min(lineStartPos + 2, $from.end()));
+          const match = afterStart.match(/^ {1,2}/);
+          if (match) {
+            dispatch(state.tr.delete(lineStartPos, lineStartPos + match[0].length));
+          }
           return true;
         }
         return false;

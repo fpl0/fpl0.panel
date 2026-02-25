@@ -17,7 +17,6 @@ import { Editor } from "@tiptap/core";
 import CharacterCount from "@tiptap/extension-character-count";
 import Dropcursor from "@tiptap/extension-dropcursor";
 import Gapcursor from "@tiptap/extension-gapcursor";
-import Highlight from "@tiptap/extension-highlight";
 import HorizontalRule from "@tiptap/extension-horizontal-rule";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
@@ -44,6 +43,7 @@ import { SlashCommandMenu } from "./editor/SlashCommandMenu";
 import { TwitterCardNode } from "./editor/TwitterCardNode";
 import { YouTubeEmbedNode } from "./editor/YouTubeEmbedNode";
 import { DescriptionList, DescriptionTerm, DescriptionDetails } from "./editor/DefinitionList";
+import { InlineJsxMark } from "./editor/InlineJsxMark";
 
 interface Props {
   content: JSONContent;
@@ -119,7 +119,15 @@ export function TipTapEditor(props: Props) {
         CodeBlockNode,
         Image.configure({ inline: false }),
         Link.configure({ openOnClick: false }),
-        Table.configure({ resizable: false }),
+        Table.extend({
+          addAttributes() {
+            return {
+              ...this.parent?.(),
+              label: { default: "" },
+              caption: { default: "" },
+            };
+          },
+        }).configure({ resizable: false }),
         TableRow,
         TableCell,
         TableHeader,
@@ -134,7 +142,6 @@ export function TipTapEditor(props: Props) {
         TaskList,
         TaskItem.configure({ nested: true }),
         Underline,
-        Highlight.configure({ multicolor: false }),
         Dropcursor.configure({
           color: "var(--color-primary)",
           width: 2,
@@ -154,6 +161,9 @@ export function TipTapEditor(props: Props) {
         DescriptionList,
         DescriptionTerm,
         DescriptionDetails,
+
+        // Inline JSX mark (preserves <kbd>, <Callout>, etc.)
+        InlineJsxMark,
 
         // Slash command menu
         SlashCommandMenu,

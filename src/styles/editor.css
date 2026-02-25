@@ -1262,6 +1262,41 @@ html[data-theme="dark"] .code-block-code .hljs-link {
   background: var(--color-highlight);
 }
 
+/* --- Definition List Node --- */
+
+.content dl {
+  margin: var(--space-8) 0;
+  border-left: var(--space-px) solid var(--color-border);
+  padding-left: var(--space-6);
+}
+
+.content dt {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-top: var(--space-5);
+  font-size: var(--font-size-sm);
+}
+
+.content dt:first-child {
+  margin-top: 0;
+}
+
+.content dd {
+  margin-left: 0;
+  margin-bottom: var(--space-5);
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-relaxed);
+}
+
+.content dd > .ProseMirror-trailingBreak:only-child::before {
+  content: "Definition…";
+  color: var(--color-muted);
+  pointer-events: none;
+  font-style: italic;
+}
+
 /* --- Passthrough Block Node --- */
 
 .passthrough-node {

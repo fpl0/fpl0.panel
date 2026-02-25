@@ -11,10 +11,46 @@ function attr(node: JSONContent, key: string, fallback: string | number): string
 }
 
 export function proseMirrorToMdx(doc: JSONContent): string {
-  return (doc.content ?? []).map(serializeNode).join("\n\n");
+  return (doc.content ?? []).map((n) => serializeNode(n, "")).join("\n\n");
 }
 
-function serializeNode(node: JSONContent): string {
+function serializeList(
+  node: JSONContent,
+  indent: string,
+  markerFn: (item: JSONContent, i: number) => string,
+): string {
+  return (node.content ?? [])
+    .map((item, i) => {
+      const marker = markerFn(item, i);
+      const padding = " ".repeat(marker.length);
+      const children = item.content ?? [];
+      const parts: string[] = [];
+
+      for (let c = 0; c < children.length; c++) {
+        const child = children[c];
+        const isNestedList =
+          child.type === "bulletList" ||
+          child.type === "orderedList" ||
+          child.type === "taskList";
+
+        if (c === 0) {
+          // First child gets the marker
+          parts.push(`${indent}${marker}${serializeNode(child, indent + padding)}`);
+        } else if (isNestedList) {
+          // Nested lists recurse with increased indent
+          parts.push(serializeNode(child, indent + padding));
+        } else {
+          // Continuation paragraphs
+          parts.push(`${indent}${padding}${serializeNode(child, indent + padding)}`);
+        }
+      }
+
+      return parts.join("\n");
+    })
+    .join("\n");
+}
+
+function serializeNode(node: JSONContent, indent = ""): string {
   switch (node.type) {
     case "paragraph":
       return serializeInline(node.content ?? []);
@@ -26,7 +62,7 @@ function serializeNode(node: JSONContent): string {
     }
 
     case "blockquote": {
-      const inner = (node.content ?? []).map(serializeNode).join("\n\n");
+      const inner = (node.content ?? []).map((n) => serializeNode(n, "")).join("\n\n");
       return inner
         .split("\n")
         .map((line) => `> ${line}`)
@@ -34,29 +70,16 @@ function serializeNode(node: JSONContent): string {
     }
 
     case "bulletList":
-      return (node.content ?? [])
-        .map((item) => {
-          const inner = (item.content ?? []).map(serializeNode).join("\n\n");
-          return `- ${inner}`;
-        })
-        .join("\n");
+      return serializeList(node, indent, () => "- ");
 
     case "orderedList":
-      return (node.content ?? [])
-        .map((item, i) => {
-          const inner = (item.content ?? []).map(serializeNode).join("\n\n");
-          return `${i + 1}. ${inner}`;
-        })
-        .join("\n");
+      return serializeList(node, indent, (_item, i) => `${i + 1}. `);
 
     case "taskList":
-      return (node.content ?? [])
-        .map((item) => {
-          const checked = item.attrs?.checked ? "x" : " ";
-          const inner = (item.content ?? []).map(serializeNode).join("\n\n");
-          return `- [${checked}] ${inner}`;
-        })
-        .join("\n");
+      return serializeList(node, indent, (item) => {
+        const checked = item.attrs?.checked ? "x" : " ";
+        return `- [${checked}] `;
+      });
 
     case "codeBlock": {
       const lang = attr(node, "language", "");
@@ -106,7 +129,7 @@ function serializeNode(node: JSONContent): string {
 
     case "details": {
       const summary = attr(node, "summary", "Details");
-      const inner = (node.content ?? []).map(serializeNode).join("\n\n");
+      const inner = (node.content ?? []).map((n) => serializeNode(n, "")).join("\n\n");
       return `<details>\n<summary>${escapeJsxAttrValue(summary)}</summary>\n\n${inner}\n\n</details>`;
     }
 
@@ -153,7 +176,7 @@ function serializeNode(node: JSONContent): string {
     }
 
     case "descriptionList": {
-      const inner = (node.content ?? []).map(serializeNode).join("\n");
+      const inner = (node.content ?? []).map((n) => serializeNode(n, "")).join("\n");
       return `<dl>\n${inner}\n</dl>`;
     }
 
@@ -162,7 +185,7 @@ function serializeNode(node: JSONContent): string {
     }
 
     case "descriptionDetails": {
-      const inner = (node.content ?? []).map(serializeNode).join("\n");
+      const inner = (node.content ?? []).map((n) => serializeNode(n, "")).join("\n");
       return `  <dd>${inner}</dd>`;
     }
 
@@ -177,8 +200,12 @@ function serializeInline(nodes: JSONContent[]): string {
 
 function serializeInlineNode(node: JSONContent): string {
   if (node.type === "text") {
-    let text = node.text ?? "";
     const marks = node.marks ?? [];
+    // inlineJsx mark: emit raw text with no wrapping
+    if (marks.some((m) => m.type === "inlineJsx")) {
+      return node.text ?? "";
+    }
+    let text = node.text ?? "";
     for (const mark of marks) {
       switch (mark.type) {
         case "bold":
@@ -198,9 +225,6 @@ function serializeInlineNode(node: JSONContent): string {
           break;
         case "underline":
           text = `<u>${text}</u>`;
-          break;
-        case "highlight":
-          text = `==${text}==`;
           break;
         default:
           break;

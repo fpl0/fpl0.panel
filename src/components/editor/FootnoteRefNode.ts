@@ -100,7 +100,7 @@ export const FootnoteRefNode = Node.create({
           inputEl.remove();
           inputEl = null;
         }
-        dom.textContent = `[${currentNode.attrs.identifier}]`;
+        dom.textContent = `[${value}]`;
 
         if (value && value !== currentNode.attrs.identifier) {
           const pos = typeof getPos === "function" ? getPos() : undefined;

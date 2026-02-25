@@ -9,7 +9,7 @@
 export { state, setState, activeEntry } from "./state";
 export type { View, AppState } from "./state";
 export { navigate, openEntry, openEntryBySlug, confirmNavigation, cancelNavigation, setNavigationGuard } from "./navigation";
-export { refreshEntries, publishEntry, unpublishEntry, deleteEntry, patchEntry } from "./content";
+export { refreshEntries, publishEntry, unpublishEntry, rollbackEntry, deleteEntry, patchEntry } from "./content";
 export { lastExternalChange, suppressFsChange, clearExternalChange, setupWatcher } from "./watcher";
 export { initApp, updateConfig } from "./config";
 export { toggleTheme, initTheme } from "./theme";

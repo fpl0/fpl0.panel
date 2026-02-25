@@ -115,6 +115,8 @@ pub fn create_post(repo_path: &str, args: CreatePostArgs) -> Result<ContentEntry
         image: None,
         file_path: file_path.to_string_lossy().to_string(),
         modified_date: None,
+        published_hash: None,
+        has_changed: false,
     })
 }
 
@@ -227,6 +229,8 @@ pub fn create_app(repo_path: &str, args: CreateAppArgs) -> Result<ContentEntry, 
         image: None,
         file_path: index_path.to_string_lossy().to_string(),
         modified_date: None,
+        published_hash: None,
+        has_changed: false,
     })
 }
 

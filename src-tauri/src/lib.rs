@@ -38,6 +38,7 @@ pub fn run() {
             commands::delete_content,
             commands::publish,
             commands::unpublish,
+            commands::rollback,
             commands::git_status,
             commands::open_in_vscode,
             commands::start_watcher,

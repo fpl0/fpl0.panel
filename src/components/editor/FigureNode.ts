@@ -63,14 +63,36 @@ export const FigureNode = Node.create({
       // --- Empty state ---
       const emptyState = document.createElement("div");
       emptyState.classList.add("figure-node-empty");
-      emptyState.innerHTML = `
-        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5">
-          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-          <circle cx="8.5" cy="8.5" r="1.5"/>
-          <polyline points="21 15 16 10 5 21"/>
-        </svg>
-        <span>Click to add image</span>
-      `;
+
+      const emptySvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      emptySvg.setAttribute("viewBox", "0 0 24 24");
+      emptySvg.setAttribute("width", "32");
+      emptySvg.setAttribute("height", "32");
+      emptySvg.setAttribute("fill", "none");
+      emptySvg.setAttribute("stroke", "currentColor");
+      emptySvg.setAttribute("stroke-width", "1.5");
+      const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      rect.setAttribute("x", "3");
+      rect.setAttribute("y", "3");
+      rect.setAttribute("width", "18");
+      rect.setAttribute("height", "18");
+      rect.setAttribute("rx", "2");
+      rect.setAttribute("ry", "2");
+      emptySvg.appendChild(rect);
+      const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      circle.setAttribute("cx", "8.5");
+      circle.setAttribute("cy", "8.5");
+      circle.setAttribute("r", "1.5");
+      emptySvg.appendChild(circle);
+      const polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+      polyline.setAttribute("points", "21 15 16 10 5 21");
+      emptySvg.appendChild(polyline);
+      emptyState.appendChild(emptySvg);
+
+      const emptyLabel = document.createElement("span");
+      emptyLabel.textContent = "Click to add image";
+      emptyState.appendChild(emptyLabel);
+
       dom.appendChild(emptyState);
 
       // --- Edit hint ---
@@ -136,17 +158,19 @@ export const FigureNode = Node.create({
           const row = document.createElement("div");
           row.classList.add("figure-edit-row");
 
+          const fieldId = `figure-${field.key}-${Math.random().toString(36).slice(2, 8)}`;
           const lbl = document.createElement("label");
           lbl.classList.add("figure-edit-label");
           lbl.textContent = field.label;
+          lbl.setAttribute("for", fieldId);
           row.appendChild(lbl);
 
           const input = document.createElement("input");
           input.type = "text";
+          input.id = fieldId;
           input.classList.add("embed-node-input");
           input.value = (currentNode.attrs[field.key] as string) || "";
           input.placeholder = field.placeholder;
-          input.setAttribute("aria-label", field.label);
           row.appendChild(input);
 
           inputs[field.key] = input;
@@ -257,6 +281,9 @@ export const FigureNode = Node.create({
         stopEvent(event: Event) {
           if (editing && formContainer?.contains(event.target as globalThis.Node)) return true;
           return false;
+        },
+        ignoreMutation() {
+          return true;
         },
         update(updatedNode) {
           if (updatedNode.type.name !== "figure") return false;
