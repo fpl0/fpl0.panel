@@ -2,6 +2,7 @@ import { Match, Show, Switch } from "solid-js";
 import { state } from "../lib/store";
 import { TopBar } from "../components/Sidebar";
 import { ContentListView } from "./ContentListView";
+import { LibraryView } from "./LibraryView";
 import { EditorView } from "./EditorView";
 import { AppDetailView } from "./AppDetailView";
 import { SettingsView } from "./SettingsView";
@@ -14,17 +15,22 @@ export function AppShell() {
 
   return (
     <div class="app-layout">
-      {/* Show top bar for list/create/settings views (not editor/detail — they have their own bar) */}
+      {/* Show top bar for list/create/settings/library views (not editor/detail — they have their own bar) */}
       <Switch>
-        <Match when={state.view.kind === "list" || state.view.kind === "create" || state.view.kind === "settings" || state.view.kind === "analytics"}>
+        <Match when={state.view.kind === "list" || state.view.kind === "library" || state.view.kind === "create" || state.view.kind === "settings" || state.view.kind === "analytics"}>
           <TopBar />
         </Match>
       </Switch>
 
       <Switch>
         <Match when={state.view.kind === "list"}>
-          <main class="main-panel dash-container-parent wide">
+          <main class="main-panel wide">
             <ContentListView />
+          </main>
+        </Match>
+        <Match when={state.view.kind === "library"}>
+          <main class="main-panel wide">
+            <LibraryView />
           </main>
         </Match>
         <Match when={state.view.kind === "editor"}>

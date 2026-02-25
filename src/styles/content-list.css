@@ -1,106 +1,84 @@
 /* ==========================================================================
-   CONTENT LIST — "The Ledger"
-   Matches blog's home.css ledger layout exactly.
-   Two-column grid: date on left, content on right.
-   Whitespace-only separation between entries.
+   DASHBOARD — Compact overview (KPI strip, status bar, two-column sections)
+   + shared post-list ledger styles reused by both dashboard and library.
    ========================================================================== */
 
 /* --- Dashboard Container --- */
 
-.dash-container {
-  display: grid;
-  grid-template-columns: 200px 1fr;
-  gap: var(--space-12);
-  height: 100%;
-  align-items: start;
-}
-
-/* --- Dashboard Sidebar --- */
-
-.dash-sidebar {
+.mc {
   display: flex;
   flex-direction: column;
   gap: var(--space-8);
-  position: sticky;
-  top: 0;
 }
 
-.dash-sidebar-section {
+/* --- KPI Strip --- */
+
+.mc-kpi-strip {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
+  align-items: baseline;
+  gap: var(--space-4);
+  flex-wrap: wrap;
 }
 
-.dash-sidebar-label {
+.mc-kpi {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.mc-kpi-value {
+  font-family: var(--font-serif);
+  font-size: var(--font-size-h2);
+  font-weight: 300;
+  color: var(--color-text);
+  line-height: 1;
+}
+
+.mc-kpi-label {
   font-family: var(--font-mono-brand);
   font-size: var(--font-size-micro);
   text-transform: uppercase;
   letter-spacing: var(--letter-spacing-wide);
   color: var(--color-text-muted);
-  opacity: 0.8;
 }
 
-.dash-stats-vertical {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.dash-stat {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  padding-bottom: var(--space-2);
-  border-bottom: var(--ui-border-subtle);
-}
-
-.dash-stat-label {
-  font-family: var(--font-mono-brand);
-  font-size: var(--font-size-label);
-  text-transform: uppercase;
-  letter-spacing: var(--letter-spacing-ui-micro); /* Optical balance */
+.mc-kpi-sep {
   color: var(--color-text-muted);
-  font-weight: var(--font-weight-ui-micro); /* Optical balance */
+  opacity: 0.35;
+  user-select: none;
 }
 
-.dash-stat-value {
-  font-family: var(--font-serif);
-  font-size: var(--font-size-h3); /* Slightly larger for emphasis */
-  font-weight: 300;
-  color: var(--color-text);
-}
+/* --- Status Bar --- */
 
-/* --- Health Sidebar --- */
-
-.dash-health-list {
+.mc-status-bar {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
 }
 
-.dash-health-item {
+.mc-status-group {
   display: flex;
   align-items: center;
   gap: var(--space-2);
 }
 
-.dash-health-dot {
+.mc-status-dot {
   width: var(--space-2);
   height: var(--space-2);
   border-radius: var(--radius-round);
   flex-shrink: 0;
 }
 
-.dash-health-dot.up {
+.mc-status-dot.up {
   background: var(--color-success);
 }
 
-.dash-health-dot.down {
+.mc-status-dot.down {
   background: var(--color-error);
 }
 
-.dash-health-text,
-.dash-health-link {
+.mc-status-link {
   font-family: var(--font-mono-brand);
   font-size: var(--font-size-micro);
   text-transform: uppercase;
@@ -109,185 +87,302 @@
   text-decoration: none;
 }
 
-.dash-health-link:hover {
+.mc-status-link:hover {
   color: var(--color-primary);
   text-decoration: underline;
 }
 
-.dash-health-status {
+.mc-status-label {
   font-family: var(--font-mono-brand);
   font-size: var(--font-size-micro);
   text-transform: uppercase;
   letter-spacing: var(--letter-spacing-loose);
   color: var(--color-text-muted);
-  margin-left: auto;
+  opacity: 0.7;
 }
 
+.mc-status-sep {
+  color: var(--color-text-muted);
+  opacity: 0.35;
+  margin: 0 var(--space-1);
+  user-select: none;
+}
 
-/* --- Deployment & Traffic Sidebar --- */
-
-.dash-deploy-commit {
+.mc-status-commit {
   font-family: var(--font-mono-brand);
   font-size: var(--font-size-micro);
   color: var(--color-text-muted);
+  opacity: 0.7;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 100%;
-  margin-top: var(--space-1);
+  max-width: 280px;
 }
 
-.dash-deploy-configure,
-.dash-deploy-loading {
+.mc-status-time {
   font-family: var(--font-mono-brand);
   font-size: var(--font-size-micro);
   text-transform: uppercase;
   letter-spacing: var(--letter-spacing-loose);
   color: var(--color-text-muted);
+  opacity: 0.7;
 }
 
-.dash-deploy-configure {
-  color: var(--color-primary);
-  cursor: pointer;
-  text-decoration: none;
+/* --- Two-Column Sections --- */
+
+.mc-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-12);
+  align-items: start;
 }
 
-.dash-deploy-configure:hover {
-  text-decoration: underline;
+.mc-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
 }
 
-.dash-traffic-link {
+.mc-section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.mc-section-label {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  letter-spacing: var(--letter-spacing-slight);
+  color: var(--color-text-secondary);
+}
+
+.mc-section-empty {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.mc-view-all {
   font-family: var(--font-mono-brand);
   font-size: var(--font-size-micro);
   text-transform: uppercase;
   letter-spacing: var(--letter-spacing-loose);
   color: var(--color-primary);
   cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  width: fit-content;
   margin-top: var(--space-2);
-  display: inline-block;
 }
 
-.dash-traffic-link:hover {
+.mc-view-all:hover {
   text-decoration: underline;
 }
 
-/* --- Dashboard Main --- */
+/* --- Dashboard-scoped post list density ---
+   Both columns share a single compact density tier.
+   Titles step from content-scale h3 (20px) down to body (16px),
+   summaries go to 1-line at xs, date column shrinks.
+   This guarantees 3 entries fit without scrolling.
+   Hierarchy: KPI hero (h2 25px) > title (body 16px) > chrome (micro 12px)
+   ─────────────────────────────────────────────────── */
 
-.dash-main {
-  height: 100%;
-  padding-right: var(--space-4); /* Space for scrollbar */
-  overflow-y: auto;
-  overflow-x: hidden;
+.mc .post-list {
+  gap: var(--space-4);
 }
 
-/* --- Dashboard Sections --- */
-
-.dash-section {
-  margin-bottom: var(--space-y-lg);
+.mc .post-item {
+  grid-template-columns: var(--space-24) 1fr;
+  gap: var(--space-3);
 }
 
-.dash-section-label {
+.mc .post-title {
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-snug);
+  margin-bottom: 0;
+}
+
+.mc .post-summary {
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-normal);
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+}
+
+.mc .post-date-col {
+  padding-top: 0.25em; /* optical realignment at smaller title size */
+}
+
+.mc .post-date {
+  font-size: var(--font-size-micro); /* respect 12px floor */
+  font-weight: var(--font-weight-ui-micro);
+  letter-spacing: var(--letter-spacing-ui-micro);
+  opacity: 0.7;
+}
+
+/* --- Activity Dot Grid ---
+   3 rows (created/published/edited) × 12 columns (weeks).
+   Circle size encodes count. Row labels on the left.
+   Read horizontally = cadence per type.
+   Read vertically = weekly composition.
+   ─────────────────────────────────────────────── */
+
+.mc-activity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.mc-dot-grid {
+  display: grid;
+  grid-template-columns: auto repeat(12, 1fr);
+  grid-template-rows: repeat(3, var(--space-6));
+  gap: 0 var(--space-1);
+  align-items: center;
+}
+
+.mc-dot-label {
   font-family: var(--font-mono-brand);
   font-size: var(--font-size-micro);
   text-transform: uppercase;
-  letter-spacing: var(--letter-spacing-wide);
+  letter-spacing: var(--letter-spacing-loose);
   color: var(--color-text-muted);
-  margin-bottom: var(--space-y-sm);
+  opacity: 0.7;
+  padding-right: var(--space-3);
+  justify-self: end;
 }
 
-/* --- Filter Count Badge --- */
+.mc-dot-label.created { color: var(--color-text-muted); }
+.mc-dot-label.published { color: var(--color-success); }
+.mc-dot-label.edited { color: var(--color-primary); }
 
-.filter-count {
-  opacity: var(--opacity-recede);
-  margin-left: var(--space-1);
-}
-
-/* --- Filter Bar --- */
-
-.filter-bar {
+.mc-dot-cell {
   display: flex;
   align-items: center;
+  justify-content: center;
+}
+
+.mc-dot {
+  border-radius: var(--radius-round);
+  background: var(--color-border);
+  transition:
+    width var(--duration-normal) var(--ease-out),
+    height var(--duration-normal) var(--ease-out);
+}
+
+.mc-dot.active.created {
+  background: var(--color-text-muted);
+}
+
+.mc-dot.active.published {
+  background: var(--color-success);
+}
+
+.mc-dot.active.edited {
+  background: var(--color-primary);
+}
+
+/* --- KPI Warning Variant --- */
+
+.mc-kpi-value--warn {
+  color: var(--color-primary);
+}
+
+/* --- Bottom Row (Tags + Quick Actions) --- */
+
+.mc-bottom {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-12);
+  align-items: start;
+  padding-top: var(--space-4);
+  border-top: var(--ui-border-subtle);
+}
+
+.mc-tags-section {
+  display: flex;
+  flex-direction: column;
   gap: var(--space-3);
-  margin-bottom: var(--space-y-lg);
+}
+
+.mc-tags {
+  display: flex;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 
-.filter-group {
-  display: flex;
+.mc-tag {
+  font-family: var(--font-mono-brand);
+  font-size: var(--font-size-micro);
+  color: var(--color-text-muted);
+  background: var(--color-bg);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  border: var(--ui-border-subtle);
+  display: inline-flex;
+  align-items: center;
   gap: var(--space-1);
 }
 
-.filter-chip {
-  font-family: var(--font-mono-brand);
-  font-size: var(--font-size-micro);
-  text-transform: uppercase;
-  letter-spacing: var(--letter-spacing-wide);
-  color: var(--color-text-muted);
-  text-decoration: none;
-  border: var(--space-px) solid var(--color-border);
-  border-radius: var(--radius-sm); /* More geometric than pills */
-  padding: var(--space-1) var(--space-3);
-  transition:
-    color var(--duration-normal) var(--ease-out),
-    border-color var(--duration-normal) var(--ease-out),
-    background-color var(--duration-normal) var(--ease-out);
-  display: inline-flex;
-  align-items: center;
-  line-height: 1;
-  cursor: pointer;
-  background: none;
-  opacity: 0.8;
-}
-
-.filter-chip:hover {
-  color: var(--color-primary);
-  border-color: var(--color-primary);
-  opacity: 1;
-}
-
-.filter-chip.active {
-  color: var(--color-primary);
-  border-color: var(--color-primary);
-  background: var(--color-highlight); /* Subtle highlight vs solid color */
+.mc-tag-count {
   font-weight: 600;
+  color: var(--color-text-secondary);
+  opacity: 0.7;
 }
 
-/* Search input — pill-shaped to match filter chips */
-.filter-search {
-  flex: 1;
-  min-width: 120px;
-  background: transparent;
-  border: var(--space-px) solid var(--color-border);
-  border-radius: var(--radius-full);
-  padding: var(--space-px) var(--space-3);
-  font-family: var(--font-sans);
-  font-size: var(--font-size-xs);
-  color: var(--color-text);
-  outline: none;
-  line-height: 1.2;
-  transition:
-    color var(--duration-normal) var(--ease-out),
-    border-color var(--duration-normal) var(--ease-out);
+.mc-actions-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
-.filter-search:focus {
-  border-color: var(--color-primary);
+.mc-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
 }
 
-.filter-search::placeholder {
+.mc-action {
   font-family: var(--font-mono-brand);
   font-size: var(--font-size-micro);
   text-transform: uppercase;
   letter-spacing: var(--letter-spacing-loose);
-  color: var(--color-muted);
+  color: var(--color-text-muted);
+  background: none;
+  border: var(--space-px) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-3);
+  cursor: pointer;
+  transition:
+    color var(--duration-normal) var(--ease-out),
+    border-color var(--duration-normal) var(--ease-out);
+  white-space: nowrap;
 }
 
-/* --- Post List — Ledger Layout (from blog's home.css) --- */
+.mc-action:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.mc-action-title {
+  text-transform: none;
+  font-family: var(--font-sans);
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   POST LIST — Shared ledger layout (used by dashboard + library)
+   Two-column grid: date on left, content on right.
+   ========================================================================== */
 
 .post-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-y-md); /* Consistent baseline gap */
+  gap: var(--space-y-md);
   list-style: none;
   padding: 0;
   margin: 0;
@@ -296,14 +391,14 @@
 /* Each entry: CSS Grid with status+date column + content column */
 .post-item {
   display: grid;
-  grid-template-columns: var(--space-48) 1fr; /* Precisely 12rem on 4px grid */
+  grid-template-columns: var(--space-48) 1fr;
   gap: var(--space-6);
   align-items: baseline;
   transition: opacity var(--duration-normal) var(--ease-out);
   container-type: inline-size;
 }
 
-/* --- Compact variant for "Continue Working" --- */
+/* --- Compact variant for "Work in Progress" --- */
 
 .post-list.compact {
   gap: var(--space-4);
@@ -362,9 +457,9 @@
 .post-date {
   font-family: var(--font-mono-brand);
   font-size: var(--font-size-xxs);
-  font-weight: var(--font-weight-ui-xs); /* Optical balance */
+  font-weight: var(--font-weight-ui-xs);
   text-transform: uppercase;
-  letter-spacing: var(--letter-spacing-ui-xs); /* Optical balance */
+  letter-spacing: var(--letter-spacing-ui-xs);
   color: var(--color-text-muted);
   opacity: 0.85;
 }
@@ -378,7 +473,7 @@
 
 .post-title {
   font-family: var(--font-serif);
-  font-size: var(--font-size-h3); /* Scaled down for tighter ledger look */
+  font-size: var(--font-size-h3);
   font-weight: 700;
   line-height: var(--line-height-snug);
   color: var(--color-text);
@@ -399,7 +494,6 @@
   font-family: var(--font-sans);
   line-height: var(--line-height-relaxed);
   max-width: var(--content-width-narrow);
-  /* Truncate to 2 lines */
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;

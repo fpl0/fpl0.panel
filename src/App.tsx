@@ -55,11 +55,11 @@ export function App() {
       return;
     }
 
-    // Cmd+L — back to content list
+    // Cmd+L — open library
     if (mod && e.key === "l") {
       e.preventDefault();
       closeSearch();
-      navigate({ kind: "list" });
+      navigate({ kind: "library" });
       return;
     }
 

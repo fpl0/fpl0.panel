@@ -24,6 +24,13 @@ export function TopBar() {
         </button>
         <span class="nav-sep">/</span>
         <button
+          class={`nav-link ${isActive("library") ? "active" : ""}`}
+          onClick={() => navigate({ kind: "library" })}
+        >
+          library
+        </button>
+        <span class="nav-sep">/</span>
+        <button
           class={`nav-link ${isActive("create") ? "active" : ""}`}
           onClick={() => navigate({ kind: "create" })}
         >
@@ -70,8 +77,8 @@ export function DetailBar(props: DetailBarProps) {
   return (
     <div class="detail-bar">
       <div class="detail-bar-left">
-        <button class="back-link" onClick={() => navigate({ kind: "list" })} aria-label="Back to content list">
-          &larr; content
+        <button class="back-link" onClick={() => navigate({ kind: "library" })} aria-label="Back to library">
+          &larr; library
         </button>
       </div>
       <div class="detail-bar-center">

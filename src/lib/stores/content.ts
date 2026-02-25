@@ -54,7 +54,7 @@ export async function deleteEntry(slug: string): Promise<void> {
   suppressFsChange();
   await deleteContent(repoPath, slug);
   await refreshEntries();
-  setState("view", { kind: "list" });
+  setState("view", { kind: "library" });
 }
 
 /** Patch fields on an entry in the store by slug (optimistic UI update). */

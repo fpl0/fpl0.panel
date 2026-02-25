@@ -4,6 +4,7 @@ import type { AppConfig, ContentEntry } from "../commands";
 
 export type View =
   | { kind: "list" }
+  | { kind: "library" }
   | { kind: "editor"; slug: string }
   | { kind: "app-detail"; slug: string }
   | { kind: "settings" }

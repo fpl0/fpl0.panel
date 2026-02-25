@@ -11,6 +11,7 @@
 @import "./tables.css";
 @import "./sidebar.css";
 @import "./content-list.css";
+@import "./library.css";
 @import "./editor.css";
 @import "./metadata.css";
 @import "./onboarding.css";
@@ -377,11 +378,6 @@ textarea.input:focus {
 
 .main-panel::-webkit-scrollbar {
   display: none;
-}
-
-/* Dashboard-specific main panel (no scroll) */
-.dash-container-parent {
-  overflow: hidden !important;
 }
 
 /* Wider main panel for editor view */
