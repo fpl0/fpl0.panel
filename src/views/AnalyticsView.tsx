@@ -8,7 +8,7 @@ import { createSignal, For, Show, onMount } from "solid-js";
 import type { CfAnalytics } from "../lib/commands";
 import { getCachedAnalytics, forceAnalytics } from "../lib/stores/cfcache";
 
-type Period = 7 | 30;
+type Period = 1 | 7 | 30;
 type MetricMode = "engagement" | "full";
 
 function formatNumber(n: number): string {
@@ -35,8 +35,15 @@ function statusClass(code: number): string {
   return "analytics-status-2xx";
 }
 
-/** Format "2026-02-18" → "Feb 18" */
+/** Format "2026-02-18" → "Feb 18", or "2026-02-18T14:00:00Z" → "2pm" */
 function formatShortDate(iso: string): string {
+  if (iso.includes("T")) {
+    const hour = parseInt(iso.slice(11, 13), 10);
+    if (hour === 0) return "12am";
+    if (hour < 12) return `${hour}am`;
+    if (hour === 12) return "12pm";
+    return `${hour - 12}pm`;
+  }
   const [, m, d] = iso.split("-");
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   return `${months[parseInt(m, 10) - 1]} ${parseInt(d, 10)}`;
@@ -81,7 +88,7 @@ function BarChart(props: { data: { date: string; count: number }[] }) {
             const showCount = () => d.count > 0;
 
             // Date labels: first, last, and evenly spaced (skip last if too close to a step)
-            const dateStep = n <= 7 ? 1 : n <= 14 ? 2 : 7;
+            const dateStep = n <= 7 ? 1 : n <= 14 ? 2 : n <= 24 ? 4 : 7;
             const showDate = () => {
               if (i() === 0 || i() % dateStep === 0) return true;
               if (i() === n - 1) return (n - 1) % dateStep >= 3;
@@ -133,7 +140,7 @@ export function AnalyticsView() {
   const [analytics, setAnalytics] = createSignal<CfAnalytics | null>(null);
   const [loading, setLoading] = createSignal(true);
   const [error, setError] = createSignal<string | null>(null);
-  const [period, setPeriod] = createSignal<Period>(7);
+  const [period, setPeriod] = createSignal<Period>(1);
   const [metric, setMetric] = createSignal<MetricMode>("engagement");
 
   // Guards against stale responses when filters are switched rapidly
@@ -189,6 +196,7 @@ export function AnalyticsView() {
   }
 
   const metricLabel = () => (metric() === "engagement" ? "page views" : "requests");
+  const periodLabel = () => period() === 1 ? "24h" : `${period()}d`;
 
   // Derived KPI values from daily_requests
   const totalBytes = (a: CfAnalytics) => a.daily_requests.reduce((s, d) => s + d.bytes, 0);
@@ -202,7 +210,7 @@ export function AnalyticsView() {
 
   return (
     <div class="analytics-view">
-      <h1>Analytics</h1>
+      <h1 class="view-title">Analytics</h1>
 
       <Show when={error()}>
         <div class="analytics-error">
@@ -246,6 +254,12 @@ export function AnalyticsView() {
                 </div>
                 <div class="filter-group">
                   <button
+                    class={`filter-chip ${period() === 1 ? "active" : ""}`}
+                    onClick={() => switchPeriod(1)}
+                  >
+                    24h
+                  </button>
+                  <button
                     class={`filter-chip ${period() === 7 ? "active" : ""}`}
                     onClick={() => switchPeriod(7)}
                   >
@@ -284,7 +298,7 @@ export function AnalyticsView() {
             {/* Traffic chart */}
             <div class="analytics-section">
               <div class="analytics-section-label">
-                {metric() === "engagement" ? "Page views" : "Traffic"} &middot; {period()}d
+                {metric() === "engagement" ? "Page views" : "Traffic"} &middot; {periodLabel()}
               </div>
               <BarChart data={a().daily_requests} />
             </div>
@@ -293,7 +307,7 @@ export function AnalyticsView() {
             <div class="analytics-grid">
               <div class="analytics-section">
                 <div class="analytics-section-label">
-                  Top {metric() === "engagement" ? "Content" : "Paths"} &middot; last 24h
+                  Top {metric() === "engagement" ? "Content" : "Paths"} &middot; {periodLabel()}
                 </div>
                 <Show
                   when={a().top_paths.length > 0}
@@ -315,7 +329,7 @@ export function AnalyticsView() {
               </div>
 
               <div class="analytics-section">
-                <div class="analytics-section-label">Top Countries &middot; last 24h</div>
+                <div class="analytics-section-label">Top Countries &middot; {periodLabel()}</div>
                 <Show
                   when={a().top_countries.length > 0}
                   fallback={<p class="analytics-empty">No data for this period.</p>}
@@ -356,7 +370,7 @@ export function AnalyticsView() {
             {/* Row 2: Browsers + Status Codes */}
             <div class="analytics-grid">
               <div class="analytics-section">
-                <div class="analytics-section-label">Browsers &middot; {period()}d</div>
+                <div class="analytics-section-label">Browsers &middot; {periodLabel()}</div>
                 <Show
                   when={a().browsers.length > 0}
                   fallback={<p class="analytics-empty">No browser data.</p>}
@@ -394,7 +408,7 @@ export function AnalyticsView() {
               </div>
 
               <div class="analytics-section">
-                <div class="analytics-section-label">Status Codes &middot; {period()}d</div>
+                <div class="analytics-section-label">Status Codes &middot; {periodLabel()}</div>
                 <Show
                   when={a().status_codes.length > 0}
                   fallback={<p class="analytics-empty">No status code data.</p>}

@@ -43,46 +43,55 @@ function formatDate(dateStr: string): string {
   }
 }
 
-/** Per-week activity breakdown: created, published, and edited counts. */
-interface WeekActivity {
-  created: number;
-  published: number;
-  edited: number;
+/** Per-day activity cell. */
+interface DayCell {
+  total: number;
+  published: boolean;
+  edited: boolean;
+  date: string; // ISO YYYY-MM-DD
+  month: number; // 0-based month index
 }
 
-function weeklyActivity(entries: typeof state.entries, weeks: number): WeekActivity[] {
+const MONTHS_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const CELL_PX = 18; // target px per cell (cell width + gap)
+
+function dailyHeat(entries: typeof state.entries, count: number): DayCell[] {
   const now = Date.now();
-  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
-  const data: WeekActivity[] = Array.from({ length: weeks }, () => ({ created: 0, published: 0, edited: 0 }));
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const cells: DayCell[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const offset = count - 1 - i;
+    const d = new Date(now - offset * msPerDay);
+    cells.push({ total: 0, published: false, edited: false, date: d.toISOString().slice(0, 10), month: d.getMonth() });
+  }
 
   for (const e of entries) {
-    // Created
-    const createdTime = new Date(e.created_date).getTime();
-    const createdWeek = Math.floor((now - createdTime) / msPerWeek);
-    if (createdWeek >= 0 && createdWeek < weeks) {
-      data[weeks - 1 - createdWeek].created++;
-    }
+    const created = new Date(e.created_date).getTime();
+    const cDay = Math.floor((now - created) / msPerDay);
+    if (cDay >= 0 && cDay < count) cells[count - 1 - cDay].total++;
 
-    // Published
     if (!e.is_draft && e.publication_date) {
-      const pubTime = new Date(e.publication_date).getTime();
-      const pubWeek = Math.floor((now - pubTime) / msPerWeek);
-      if (pubWeek >= 0 && pubWeek < weeks) {
-        data[weeks - 1 - pubWeek].published++;
+      const pub = new Date(e.publication_date).getTime();
+      const pDay = Math.floor((now - pub) / msPerDay);
+      if (pDay >= 0 && pDay < count) {
+        cells[count - 1 - pDay].total++;
+        cells[count - 1 - pDay].published = true;
       }
     }
 
-    // Edited (modified_date, excluding the creation week to avoid double-counting)
     if (e.modified_date) {
-      const modTime = new Date(e.modified_date).getTime();
-      const modWeek = Math.floor((now - modTime) / msPerWeek);
-      if (modWeek >= 0 && modWeek < weeks && modWeek !== createdWeek) {
-        data[weeks - 1 - modWeek].edited++;
+      const mod = new Date(e.modified_date).getTime();
+      const mDay = Math.floor((now - mod) / msPerDay);
+      const createdDay = Math.floor((now - created) / msPerDay);
+      if (mDay >= 0 && mDay < count && mDay !== createdDay) {
+        cells[count - 1 - mDay].total++;
+        cells[count - 1 - mDay].edited = true;
       }
     }
   }
 
-  return data;
+  return cells;
 }
 
 export function ContentListView() {
@@ -109,13 +118,13 @@ export function ContentListView() {
     !!(state.config.cf_account_id && state.config.cf_project_name && state.config.cf_api_token);
 
   const [deployment, setDeployment] = createSignal<CfDeploymentInfo | null>(null);
-  const [weeklyTraffic, setWeeklyTraffic] = createSignal<number | null>(null);
+  const [dailyTraffic, setDailyTraffic] = createSignal<number | null>(null);
 
   let deployInterval: ReturnType<typeof setInterval>;
   onMount(() => {
     if (!cfConfigured()) return;
     getCachedDeployment(setDeployment);
-    getCachedAnalytics(7, true, (a) => setWeeklyTraffic(a.total_requests));
+    getCachedAnalytics(1, true, (a) => setDailyTraffic(a.total_requests));
     deployInterval = setInterval(() => {
       refreshDeployment().then((d) => { if (d) setDeployment(d); });
     }, 60_000);
@@ -128,8 +137,9 @@ export function ContentListView() {
   const draftCount = createMemo(() => state.entries.filter((e) => e.is_draft).length);
   const changedCount = createMemo(() => state.entries.filter((e) => !e.is_draft && e.has_changed).length);
 
-  // --- 12-week activity timeline ---
-  const activity = createMemo(() => weeklyActivity(state.entries, 12));
+  // --- Daily activity strip (auto-sized to fill width) ---
+  const [dayCount, setDayCount] = createSignal(0);
+  const days = createMemo(() => dayCount() > 0 ? dailyHeat(state.entries, dayCount()) : []);
 
   // --- Top tags ---
   const topTags = createMemo(() => {
@@ -189,11 +199,11 @@ export function ContentListView() {
               <span class="mc-kpi-label">modified</span>
             </div>
           </Show>
-          <Show when={cfConfigured() && weeklyTraffic() !== null}>
+          <Show when={cfConfigured() && dailyTraffic() !== null}>
             <span class="mc-kpi-sep">&middot;</span>
             <div class="mc-kpi">
-              <span class="mc-kpi-value">{weeklyTraffic()!.toLocaleString()}</span>
-              <span class="mc-kpi-label">7d views</span>
+              <span class="mc-kpi-value">{dailyTraffic()!.toLocaleString()}</span>
+              <span class="mc-kpi-label">24h views</span>
             </div>
           </Show>
         </div>
@@ -232,33 +242,62 @@ export function ContentListView() {
         </Show>
       </div>
 
-      {/* ── Activity Dot Grid (12 weeks × 3 types) ── */}
+      {/* ── Activity Strip (1 cell per day, auto-fills width) ── */}
       <Show when={state.entries.length > 0}>
-        <div class="mc-activity">
-          <span class="mc-section-label">Activity</span>
-          <div class="mc-dot-grid">
-            <For each={(["created", "published", "edited"] as const)}>
-              {(type) => (
+        <div
+          class="mc-activity"
+          ref={(el) => {
+            requestAnimationFrame(() => {
+              setDayCount(Math.max(Math.floor(el.clientWidth / CELL_PX), 14));
+            });
+          }}
+        >
+          <Show when={dayCount() > 0}>
+            {(() => {
+              // Center each month label within its span of cells
+              const labelAt = createMemo(() => {
+                const cells = days();
+                const map = new Map<number, string>();
+                let start = 0;
+                let cur = cells[0]?.month ?? -1;
+                for (let i = 0; i <= cells.length; i++) {
+                  const m = i < cells.length ? cells[i].month : -2;
+                  if (m !== cur) {
+                    map.set(Math.floor((start + i - 1) / 2), MONTHS_SHORT[cur]);
+                    start = i;
+                    cur = m;
+                  }
+                }
+                return map;
+              });
+              return (
                 <>
-                  <span class={`mc-dot-label ${type}`}>{type}</span>
-                  <For each={activity()}>
-                    {(week) => {
-                      const count = week[type];
-                      const size = count === 0 ? 3 : Math.min(4 + count * 3, 14);
-                      return (
-                        <div class="mc-dot-cell" title={`${count} ${type}`}>
-                          <span
-                            class={`mc-dot ${type} ${count > 0 ? "active" : ""}`}
-                            style={{ width: `${size}px`, height: `${size}px` }}
-                          />
-                        </div>
-                      );
-                    }}
-                  </For>
+                  <span class="mc-section-label">Activity · {dayCount()} days</span>
+                  <div class="mc-heat-strip" style={{ "grid-template-columns": `repeat(${dayCount()}, 1fr)` }}>
+                    <For each={days()}>
+                      {(day, i) => {
+                        const parts: string[] = [];
+                        if (day.published) parts.push("published");
+                        if (day.edited) parts.push("edited");
+                        if (day.total > 0 && !day.published && !day.edited) parts.push("created");
+                        const tip = `${formatDate(day.date)}: ${parts.length ? parts.join(" + ") : "—"}`;
+                        const cls = day.published && day.edited
+                          ? "has-split"
+                          : day.published ? "has-published"
+                          : day.total > 0 ? "has-activity" : "";
+                        return (
+                          <div class="mc-heat-col">
+                            <div class={`mc-heat-cell ${cls}`} title={tip} />
+                            <span class="mc-heat-month">{labelAt().get(i()) ?? ""}</span>
+                          </div>
+                        );
+                      }}
+                    </For>
+                  </div>
                 </>
-              )}
-            </For>
-          </div>
+              );
+            })()}
+          </Show>
         </div>
       </Show>
 
@@ -284,7 +323,13 @@ export function ContentListView() {
                       </span>
                     </div>
                     <div class="post-content">
-                      <span class="post-title" onClick={() => openEntry(entry)}>{entry.title}</span>
+                      <span
+                        class="post-title"
+                        tabIndex={0}
+                        role="button"
+                        onClick={() => openEntry(entry)}
+                        onKeyDown={(e: KeyboardEvent) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openEntry(entry); } }}
+                      >{entry.title}</span>
                       <Show when={entry.summary}>
                         <p class="post-summary">{entry.summary}</p>
                       </Show>
@@ -319,7 +364,13 @@ export function ContentListView() {
                       </span>
                     </div>
                     <div class="post-content">
-                      <span class="post-title" onClick={() => openEntry(entry)}>{entry.title}</span>
+                      <span
+                        class="post-title"
+                        tabIndex={0}
+                        role="button"
+                        onClick={() => openEntry(entry)}
+                        onKeyDown={(e: KeyboardEvent) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openEntry(entry); } }}
+                      >{entry.title}</span>
                       <Show when={entry.summary}>
                         <p class="post-summary">{entry.summary}</p>
                       </Show>
