@@ -11,6 +11,7 @@ import { refreshEntries } from "./content";
 import { setupWatcher } from "./watcher";
 import { initTheme } from "./theme";
 import { addToast } from "./notifications";
+import { startHealthPolling } from "./health";
 
 export async function initApp() {
   try {
@@ -26,6 +27,9 @@ export async function initApp() {
         addToast(`Dev server failed: ${err}`, "error");
       });
     }
+
+    // Start health polling immediately on app open, then every 5 minutes
+    startHealthPolling();
   } catch (err) {
     // First launch or corrupt config — use defaults
     if (err instanceof Error && !err.message.includes("No such file")) {

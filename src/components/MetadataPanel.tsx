@@ -1,5 +1,6 @@
 import { createSignal, createEffect, For } from "solid-js";
 import type { ContentEntry } from "../lib/commands";
+import { escapeYamlValue } from "../lib/yaml";
 
 const SUMMARY_MIN = 50;
 const SUMMARY_MAX = 360;
@@ -22,6 +23,19 @@ interface Props {
 export function MetadataPanel(props: Props) {
   const [tags, setTags] = createSignal<string[]>([]);
   const [tagInput, setTagInput] = createSignal("");
+  let titleRef: HTMLTextAreaElement | undefined;
+
+  // Auto-size title textarea when content changes reactively (rollback, external reload)
+  createEffect(() => {
+    void props.entry.title;
+    if (titleRef) {
+      requestAnimationFrame(() => {
+        if (!titleRef) return;
+        titleRef.style.height = "auto";
+        titleRef.style.height = titleRef.scrollHeight + "px";
+      });
+    }
+  });
 
   // Sync tags when props.entry.tags changes (fixes stale tags after publish/unpublish)
   createEffect(() => setTags(props.entry.tags));
@@ -32,6 +46,10 @@ export function MetadataPanel(props: Props) {
     return "valid";
   }
 
+  function serializeTags(t: string[]): string {
+    return `[${t.map((v) => `"${escapeYamlValue(v)}"`).join(", ")}]`;
+  }
+
   function handleTagKeyDown(e: KeyboardEvent) {
     if (e.key === "Enter" || e.key === ",") {
       e.preventDefault();
@@ -39,16 +57,34 @@ export function MetadataPanel(props: Props) {
       if (val.length > 0 && !tags().includes(val)) {
         const newTags = [...tags(), val];
         setTags(newTags);
-        props.onFieldChange("tags", `[${newTags.map((t) => `"${t}"`).join(", ")}]`);
+        props.onFieldChange("tags", serializeTags(newTags));
       }
       setTagInput("");
     }
+    // Backspace on empty input removes the last tag
+    if (e.key === "Backspace" && tagInput() === "" && tags().length > 0) {
+      const newTags = tags().slice(0, -1);
+      setTags(newTags);
+      props.onFieldChange("tags", serializeTags(newTags));
+    }
+  }
+
+  function handleTagPaste(e: ClipboardEvent) {
+    const text = e.clipboardData?.getData("text/plain");
+    if (!text || !text.includes(",")) return;
+    e.preventDefault();
+    const pasted = text.split(",").map((s) => s.trim()).filter((s) => s.length > 0);
+    const current = tags();
+    const newTags = [...current, ...pasted.filter((t) => !current.includes(t))];
+    setTags(newTags);
+    props.onFieldChange("tags", serializeTags(newTags));
+    setTagInput("");
   }
 
   function removeTag(tag: string) {
     const newTags = tags().filter((t) => t !== tag);
     setTags(newTags);
-    props.onFieldChange("tags", `[${newTags.map((t) => `"${t}"`).join(", ")}]`);
+    props.onFieldChange("tags", serializeTags(newTags));
   }
 
   return (
@@ -69,9 +105,15 @@ export function MetadataPanel(props: Props) {
             value={props.entry.title}
             placeholder="Title..."
             rows={1}
+            ref={(el) => {
+              titleRef = el;
+              requestAnimationFrame(() => {
+                el.style.height = "auto";
+                el.style.height = el.scrollHeight + "px";
+              });
+            }}
             onInput={(e) => {
               props.onFieldChange("title", e.currentTarget.value);
-              // Auto-expand
               e.currentTarget.style.height = "auto";
               e.currentTarget.style.height = e.currentTarget.scrollHeight + "px";
             }}
@@ -81,8 +123,8 @@ export function MetadataPanel(props: Props) {
             type="text"
             aria-label="Slug"
             value={props.entry.slug}
-            placeholder="slug..."
-            onInput={(e) => props.onFieldChange("slug", e.currentTarget.value)}
+            readOnly
+            title="Slug is derived from the file path"
           />
         </div>
 
@@ -111,7 +153,7 @@ export function MetadataPanel(props: Props) {
               {(tag) => (
                 <span class="tag-chip">
                   {tag}
-                  <button class="tag-chip-remove" onClick={() => removeTag(tag)}>
+                  <button class="tag-chip-remove" aria-label={`Remove tag: ${tag}`} onClick={() => removeTag(tag)}>
                     &times;
                   </button>
                 </span>
@@ -125,6 +167,7 @@ export function MetadataPanel(props: Props) {
               value={tagInput()}
               onInput={(e) => setTagInput(e.currentTarget.value)}
               onKeyDown={handleTagKeyDown}
+              onPaste={handleTagPaste}
             />
           </div>
         </div>
@@ -145,7 +188,7 @@ export function MetadataPanel(props: Props) {
       </div>
 
       {(props.wordCount != null || props.charCount != null) && (
-        <div class="metadata-footer">
+        <div class="metadata-footer" aria-live="polite">
           <span class="system-label">
             {(props.wordCount ?? 0).toLocaleString()} words &middot; {(props.charCount ?? 0).toLocaleString()} characters
           </span>

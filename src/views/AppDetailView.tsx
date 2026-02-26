@@ -158,10 +158,29 @@ export function AppDetailView(props: Props) {
     }
   }
 
+  function appPreviewUrl() {
+    return `${DEV_SERVER_ORIGIN}/apps/${props.slug}?theme=${state.theme}`;
+  }
+
+  function syncIframeTheme() {
+    try {
+      iframeRef?.contentWindow?.postMessage(
+        { type: "setTheme", theme: state.theme },
+        DEV_SERVER_ORIGIN,
+      );
+    } catch { /* cross-origin — ignored */ }
+  }
+
+  // Sync theme to iframe whenever the panel theme changes
+  createEffect(() => {
+    void state.theme; // track reactivity
+    syncIframeTheme();
+  });
+
   function reloadIframe() {
     if (iframeRef) {
       setIframeError(false);
-      iframeRef.src = `${DEV_SERVER_ORIGIN}/apps/${props.slug}`;
+      iframeRef.src = appPreviewUrl();
     }
   }
 
@@ -210,11 +229,10 @@ export function AppDetailView(props: Props) {
               <iframe
                 ref={iframeRef}
                 class="app-iframe"
-                src={`${DEV_SERVER_ORIGIN}/apps/${props.slug}`}
+                src={appPreviewUrl()}
                 onError={() => setIframeError(true)}
                 onLoad={(e) => {
                   try {
-                    // Access contentDocument to detect cross-origin errors or empty responses
                     const doc = (e.target as HTMLIFrameElement).contentDocument;
                     if (doc && doc.title === "") {
                       // Heuristic: blank page likely means server isn't running
@@ -224,6 +242,7 @@ export function AppDetailView(props: Props) {
                     // Cross-origin is expected for localhost — iframe loaded fine
                     setIframeError(false);
                   }
+                  syncIframeTheme();
                 }}
               />
               <Show when={iframeError()}>

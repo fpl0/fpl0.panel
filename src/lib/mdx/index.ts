@@ -1,15 +1,12 @@
 /**
- * MDX <-> TipTap ProseMirror serialization.
+ * MDX string-based serialization.
  *
- * Parse:  MDX string -> split frontmatter/body -> unified MDAST -> ProseMirror JSON
- * Serialize: ProseMirror JSON -> MDX markdown + JSX -> prepend frontmatter YAML
+ * Parse:     MDX string -> split frontmatter/body -> strip imports -> body string
+ * Serialize: body string -> auto-generate imports -> assemble full MDX file
  */
 
-import type { JSONContent } from "@tiptap/core";
 import { splitFrontmatter, assembleMdx } from "./frontmatter";
 import { generateImports } from "./imports";
-import { parseBodyToMdast, mdastToProseMirror } from "./parser";
-import { proseMirrorToMdx } from "./serializer";
 
 export { splitFrontmatter, assembleMdx } from "./frontmatter";
 
@@ -39,7 +36,7 @@ interface ExtractedImports {
  * - Separates known auto-generated imports from unknown ones to preserve
  */
 function extractImports(body: string): ExtractedImports {
-  const lines = body.split("\n");
+  const lines = body.split(/\r?\n/);
   const cleanLines: string[] = [];
   const unknownImports: string[] = [];
   let inCodeFence = false;
@@ -100,32 +97,26 @@ function extractImports(body: string): ExtractedImports {
   }
 
   return {
-    cleanBody: cleanLines.join("\n").trim(),
+    cleanBody: cleanLines.join("\n"),
     unknownImports,
   };
 }
 
-export function parseMdxToEditor(mdx: string): {
+export function parseMdxFile(mdx: string): {
   yaml: string;
-  doc: JSONContent;
+  body: string;
   unknownImports: string[];
 } {
   const { yaml, body } = splitFrontmatter(mdx);
   const { cleanBody, unknownImports } = extractImports(body);
-  const mdast = parseBodyToMdast(cleanBody);
-  const doc = mdastToProseMirror(mdast) ?? {
-    type: "doc",
-    content: [],
-  };
-  return { yaml, doc, unknownImports };
+  return { yaml, body: cleanBody, unknownImports };
 }
 
-export function serializeEditorToMdx(
+export function serializeMdxFile(
   yaml: string,
-  doc: JSONContent,
+  body: string,
   unknownImports: string[] = [],
 ): string {
-  const body = proseMirrorToMdx(doc);
   const autoImports = generateImports(body);
   const allImports = [...unknownImports, ...autoImports];
   return assembleMdx(yaml, body, allImports);

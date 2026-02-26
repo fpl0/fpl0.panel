@@ -81,8 +81,12 @@
   display: block;
 }
 
-.metadata-title-input:focus {
+.metadata-title-input:focus:not(:focus-visible) {
   outline: none;
+}
+.metadata-title-input:focus-visible {
+  outline: var(--ui-focus-ring);
+  outline-offset: var(--space-0-5);
 }
 
 .metadata-title-input::placeholder {
@@ -99,12 +103,17 @@
   padding: 0;
 }
 
-.metadata-slug:focus {
+.metadata-slug:focus:not(:focus-visible) {
   outline: none;
 }
 
 .metadata-slug::placeholder {
   color: var(--color-text-muted);
+}
+
+.metadata-slug[readonly] {
+  opacity: 0.6;
+  cursor: default;
 }
 
 /* --- Summary field with char counter --- */

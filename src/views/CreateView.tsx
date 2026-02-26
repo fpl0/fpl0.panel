@@ -1,4 +1,4 @@
-import { createSignal, For, onMount } from "solid-js";
+import { createSignal, For, onMount, onCleanup } from "solid-js";
 import { createPost, createApp } from "../lib/commands";
 import {
   state,
@@ -93,8 +93,22 @@ export function CreateView() {
 
   let titleRef: HTMLTextAreaElement | undefined;
 
+  function handleKeyDown(e: KeyboardEvent) {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      e.preventDefault();
+      if (title().trim() && !creating()) {
+        handleCreate();
+      }
+    }
+  }
+
   onMount(() => {
     titleRef?.focus();
+    document.addEventListener("keydown", handleKeyDown);
+  });
+
+  onCleanup(() => {
+    document.removeEventListener("keydown", handleKeyDown);
   });
 
   return (

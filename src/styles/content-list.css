@@ -44,7 +44,7 @@
 
 .mc-kpi-sep {
   color: var(--color-text-muted);
-  opacity: 0.35;
+  opacity: var(--opacity-subtle);
   user-select: none;
 }
 
@@ -98,12 +98,12 @@
   text-transform: uppercase;
   letter-spacing: var(--letter-spacing-loose);
   color: var(--color-text-muted);
-  opacity: 0.7;
+  opacity: var(--opacity-de-emphasize);
 }
 
 .mc-status-sep {
   color: var(--color-text-muted);
-  opacity: 0.35;
+  opacity: var(--opacity-subtle);
   margin: 0 var(--space-1);
   user-select: none;
 }
@@ -112,7 +112,7 @@
   font-family: var(--font-mono-brand);
   font-size: var(--font-size-micro);
   color: var(--color-text-muted);
-  opacity: 0.7;
+  opacity: var(--opacity-de-emphasize);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -125,7 +125,7 @@
   text-transform: uppercase;
   letter-spacing: var(--letter-spacing-loose);
   color: var(--color-text-muted);
-  opacity: 0.7;
+  opacity: var(--opacity-de-emphasize);
 }
 
 /* --- Two-Column Sections --- */
@@ -221,14 +221,14 @@
   font-size: var(--font-size-micro); /* respect 12px floor */
   font-weight: var(--font-weight-ui-micro);
   letter-spacing: var(--letter-spacing-ui-micro);
-  opacity: 0.7;
+  opacity: var(--opacity-de-emphasize);
 }
 
-/* --- Activity Dot Grid ---
-   3 rows (created/published/edited) × 12 columns (weeks).
-   Circle size encodes count. Row labels on the left.
-   Read horizontally = cadence per type.
-   Read vertically = weekly composition.
+/* --- Activity Heat Strip ---
+   One cell per day, auto-fills the container width.
+   Grid column count is set inline via style binding.
+   Empty = subtle surface. Active = primary or success.
+   Month labels appear beneath the first cell of each month.
    ─────────────────────────────────────────────── */
 
 .mc-activity {
@@ -237,53 +237,48 @@
   gap: var(--space-3);
 }
 
-.mc-dot-grid {
+.mc-heat-strip {
   display: grid;
-  grid-template-columns: auto repeat(12, 1fr);
-  grid-template-rows: repeat(3, var(--space-6));
-  gap: 0 var(--space-1);
-  align-items: center;
+  gap: var(--space-0-5);
 }
 
-.mc-dot-label {
+.mc-heat-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.mc-heat-cell {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  transition: background var(--duration-normal) var(--ease-out);
+}
+
+.mc-heat-cell.has-activity {
+  background: var(--color-primary);
+}
+
+.mc-heat-cell.has-published {
+  background: var(--color-success);
+}
+
+.mc-heat-cell.has-split {
+  background: linear-gradient(to bottom, var(--color-success) 50%, var(--color-primary) 50%);
+}
+
+.mc-heat-month {
   font-family: var(--font-mono-brand);
   font-size: var(--font-size-micro);
   text-transform: uppercase;
   letter-spacing: var(--letter-spacing-loose);
   color: var(--color-text-muted);
-  opacity: 0.7;
-  padding-right: var(--space-3);
-  justify-self: end;
-}
-
-.mc-dot-label.created { color: var(--color-text-muted); }
-.mc-dot-label.published { color: var(--color-success); }
-.mc-dot-label.edited { color: var(--color-primary); }
-
-.mc-dot-cell {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.mc-dot {
-  border-radius: var(--radius-round);
-  background: var(--color-border);
-  transition:
-    width var(--duration-normal) var(--ease-out),
-    height var(--duration-normal) var(--ease-out);
-}
-
-.mc-dot.active.created {
-  background: var(--color-text-muted);
-}
-
-.mc-dot.active.published {
-  background: var(--color-success);
-}
-
-.mc-dot.active.edited {
-  background: var(--color-primary);
+  opacity: var(--opacity-de-emphasize);
+  white-space: nowrap;
+  min-height: 1em; /* reserve space so grid rows stay aligned */
 }
 
 /* --- KPI Warning Variant --- */
@@ -326,12 +321,26 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
+  cursor: pointer;
+  transition:
+    color var(--duration-normal) var(--ease-out),
+    border-color var(--duration-normal) var(--ease-out);
+}
+
+.mc-tag:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.mc-tag:focus-visible {
+  outline: var(--ui-focus-ring);
+  outline-offset: var(--space-0-5);
 }
 
 .mc-tag-count {
   font-weight: 600;
   color: var(--color-text-secondary);
-  opacity: 0.7;
+  opacity: var(--opacity-de-emphasize);
 }
 
 .mc-actions-section {
@@ -461,7 +470,7 @@
   text-transform: uppercase;
   letter-spacing: var(--letter-spacing-ui-xs);
   color: var(--color-text-muted);
-  opacity: 0.85;
+  opacity: var(--opacity-hover);
 }
 
 /* Content column */

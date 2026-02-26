@@ -49,7 +49,7 @@ export function AppShell() {
           </main>
         </Match>
         <Match when={state.view.kind === "create"}>
-          <main class="main-panel">
+          <main class="main-panel wide">
             <CreateView />
           </main>
         </Match>

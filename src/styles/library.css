@@ -1,7 +1,7 @@
 /* ==========================================================================
    LIBRARY — Full-width content ledger
-   Matches Dashboard/Analytics aesthetic: inline filter chips, stats strip,
-   post-list grid with summaries. No sidebar.
+   Horizontal-dense layout: header + KPIs in one row, search + filters in
+   one toolbar row, entries start within ~120px of the top.
    ========================================================================== */
 
 /* --- A. Root Container --- */
@@ -9,18 +9,27 @@
 .library-view {
   display: flex;
   flex-direction: column;
-  gap: var(--space-8);
+  gap: var(--space-4);
 }
 
-/* --- B. Header --- */
+/* --- B. Header: title left, KPIs right --- */
 
-/* --- C. Stats Strip --- */
+.library-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
 
-.library-stats-strip {
+.library-header .view-title {
+  margin: 0;
+}
+
+.library-kpi-strip {
   display: flex;
   align-items: baseline;
   gap: var(--space-4);
-  flex-wrap: wrap;
 }
 
 .library-kpi {
@@ -49,45 +58,40 @@
   color: var(--color-text-muted);
 }
 
-.library-kpi-sep {
-  color: var(--color-text-muted);
-  opacity: var(--opacity-subtle);
-  user-select: none;
-}
+/* --- C. Toolbar: search + filters + sort in one row --- */
 
-/* --- D. Search --- */
-
-.library-search-input {
-  display: block;
-  width: 100%;
-  padding: var(--space-2) 0;
-  border: none;
-  border-bottom: var(--space-px) solid var(--color-border);
-  border-radius: 0;
-  background: transparent;
-  color: var(--color-text);
-  font-family: var(--font-sans);
-  font-size: var(--font-size-sm);
-  line-height: var(--line-height-normal);
-  transition: border-color var(--duration-normal) var(--ease-out);
-}
-
-.library-search-input:focus {
-  border-bottom-color: var(--color-primary);
-  outline: none;
-}
-
-.library-search-input::placeholder {
-  color: var(--color-muted);
-}
-
-/* --- E. Filter Bar --- */
-
-.library-filter-bar {
+.library-toolbar {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: var(--ui-border-subtle);
+}
+
+.library-toolbar-search {
+  width: 160px;
+  padding: var(--space-1) var(--space-2);
+  border: var(--ui-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-normal);
+  transition:
+    border-color var(--duration-normal) var(--ease-out),
+    box-shadow var(--duration-normal) var(--ease-out);
+}
+
+.library-toolbar-search:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+.library-toolbar-search::placeholder {
+  color: var(--color-muted);
 }
 
 .library-filter-label {
@@ -118,7 +122,7 @@
   color: var(--color-primary);
 }
 
-/* --- F. Tag Ribbon --- */
+/* --- D. Tag Ribbon --- */
 
 .library-tag-ribbon {
   display: flex;
@@ -195,12 +199,9 @@
   opacity: var(--opacity-de-emphasize);
 }
 
-/* --- G. Ledger Density (scoped overrides on shared .post-list) ---
-   The default .post-item grid is 192px + 24px gap — designed for the
-   Dashboard's narrow two-column context. At full Library width that
-   creates a dead canyon between date and title.
-   Fix: narrow the date to marginalia width, halve the gap, and swap
-   whitespace gaps for ruled borders so 25 entries read as a ledger.
+/* --- E. Ledger Density (scoped overrides on shared .post-list) ---
+   Tighter density: narrower date column, smaller titles, 1-line summaries
+   that fill the full width, reduced vertical padding.
    ─────────────────────────────────────────────────────────────── */
 
 .library-view .post-list {
@@ -208,9 +209,9 @@
 }
 
 .library-view .post-item {
-  grid-template-columns: var(--space-24) 1fr;
-  gap: var(--space-4);
-  padding: var(--space-5) 0;
+  grid-template-columns: var(--space-18) 1fr;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
   border-bottom: var(--ui-border-subtle);
 }
 
@@ -223,18 +224,27 @@
 }
 
 .library-view .post-date-col {
-  padding-top: 0.25em;
+  padding-top: 0.2em;
 }
 
 .library-view .post-title {
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-snug);
   margin-bottom: 0;
+}
+
+.library-view .post-summary {
+  font-size: var(--font-size-xs);
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  max-width: none;
 }
 
 .library-view .post-content {
   gap: var(--space-1);
 }
 
-/* --- H. Entry Meta Row --- */
+/* --- F. Entry Meta Row --- */
 
 .library-meta {
   display: flex;
@@ -298,7 +308,7 @@
   opacity: var(--opacity-recede);
 }
 
-/* --- I. Empty State + Pagination --- */
+/* --- G. Empty State + Pagination --- */
 
 .library-empty {
   padding: var(--space-12);

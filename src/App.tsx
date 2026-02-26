@@ -63,11 +63,30 @@ export function App() {
       return;
     }
 
-    // Escape — close search modal
+    // Cmd+Shift+A — analytics
+    if (mod && e.shiftKey && e.key === "A") {
+      e.preventDefault();
+      navigate({ kind: "analytics" });
+      return;
+    }
+
+    // Escape — close search first, then back-navigate
     if (e.key === "Escape") {
       if (state.searchOpen) {
-        return;
+        return; // SearchModal handles its own Escape
       }
+      // Don't back-navigate if a dialog is open (ConfirmDialog handles its own Escape)
+      if (state.pendingNavigation) return;
+
+      const view = state.view.kind;
+      if (view === "editor" || view === "app-detail") {
+        e.preventDefault();
+        navigate({ kind: "library" });
+      } else if (view !== "list") {
+        e.preventDefault();
+        navigate({ kind: "list" });
+      }
+      return;
     }
   }
 

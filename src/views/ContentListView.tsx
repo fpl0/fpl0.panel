@@ -5,16 +5,10 @@
  * "Am I shipping consistently?", and "What should I do next?"
  */
 import { createSignal, createMemo, For, Show, onMount, onCleanup } from "solid-js";
-import { state, openEntry, navigate } from "../lib/store";
-import { checkUrlHealth, DEV_SERVER_ORIGIN } from "../lib/commands";
-import type { HealthStatus, CfDeploymentInfo } from "../lib/commands";
+import { state, openEntry, navigate, devHealth, prodHealth } from "../lib/store";
+import { DEV_SERVER_ORIGIN } from "../lib/commands";
+import type { CfDeploymentInfo } from "../lib/commands";
 import { getCachedDeployment, refreshDeployment, getCachedAnalytics } from "../lib/stores/cfcache";
-
-// --- Global health cache: survives component remounts ---
-const HEALTH_TTL = 300_000; // 5 minutes
-let lastHealthPoll = 0;
-let cachedDevHealth: HealthStatus | null = null;
-let cachedProdHealth: HealthStatus | null = null;
 
 function relativeTime(dateStr: string): string {
   const now = Date.now();
@@ -95,23 +89,7 @@ function dailyHeat(entries: typeof state.entries, count: number): DayCell[] {
 }
 
 export function ContentListView() {
-  const [devHealth, setDevHealth] = createSignal<HealthStatus | null>(cachedDevHealth);
-  const [prodHealth, setProdHealth] = createSignal<HealthStatus | null>(cachedProdHealth);
-
-  // --- Health polling (throttled to 5-min TTL) ---
-  async function pollHealth() {
-    lastHealthPoll = Date.now();
-    checkUrlHealth(DEV_SERVER_ORIGIN).then((h) => { cachedDevHealth = h; setDevHealth(h); }).catch(() => {});
-    checkUrlHealth("https://fpl0.io").then((h) => { cachedProdHealth = h; setProdHealth(h); }).catch(() => {});
-  }
-
-  let healthInterval: ReturnType<typeof setInterval>;
-  onMount(() => {
-    const stale = Date.now() - lastHealthPoll >= HEALTH_TTL;
-    if (stale) pollHealth();
-    healthInterval = setInterval(pollHealth, HEALTH_TTL);
-  });
-  onCleanup(() => clearInterval(healthInterval));
+  // Health status comes from the global store (polled in initApp)
 
   // --- Cloudflare deployment polling ---
   const cfConfigured = () =>

@@ -1,4 +1,4 @@
-import { onMount, onCleanup } from "solid-js";
+import { onMount, onCleanup, createUniqueId } from "solid-js";
 
 interface Props {
   title: string;
@@ -10,6 +10,9 @@ interface Props {
 }
 
 export function ConfirmDialog(props: Props) {
+  const uid = createUniqueId();
+  const titleId = `dialog-title-${uid}`;
+  const descId = `dialog-desc-${uid}`;
   let cardRef: HTMLDivElement | undefined;
   let cancelRef: HTMLButtonElement | undefined;
 
@@ -41,13 +44,17 @@ export function ConfirmDialog(props: Props) {
     }
   }
 
+  let previousFocus: HTMLElement | null = null;
+
   onMount(() => {
+    previousFocus = document.activeElement as HTMLElement | null;
     document.addEventListener("keydown", handleKeyDown);
     cancelRef?.focus();
   });
 
   onCleanup(() => {
     document.removeEventListener("keydown", handleKeyDown);
+    if (previousFocus && document.body.contains(previousFocus)) previousFocus.focus();
   });
 
   return (
@@ -57,12 +64,12 @@ export function ConfirmDialog(props: Props) {
         class="dialog-card"
         role="alertdialog"
         aria-modal="true"
-        aria-labelledby="dialog-title"
-        aria-describedby="dialog-desc"
+        aria-labelledby={titleId}
+        aria-describedby={descId}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 id="dialog-title">{props.title}</h3>
-        <p id="dialog-desc">{props.message}</p>
+        <h3 id={titleId}>{props.title}</h3>
+        <p id={descId}>{props.message}</p>
         <div class="dialog-actions">
           <button class="btn" ref={cancelRef} onClick={props.onCancel}>
             Cancel

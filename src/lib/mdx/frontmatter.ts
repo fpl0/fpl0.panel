@@ -8,6 +8,8 @@ export function splitFrontmatter(mdx: string): { yaml: string; body: string } {
 }
 
 export function assembleMdx(yaml: string, body: string, imports: string[]): string {
-  const importBlock = imports.length > 0 ? `\n${imports.join("\n")}` : "";
-  return `---\n${yaml}\n---${importBlock}\n\n${body}\n`;
+  const yamlSection = `---\n${yaml.trim()}\n---`;
+  const importSection = imports.length > 0 ? `\n\n${imports.join("\n")}` : "";
+  const bodySection = `\n\n${body.trimStart()}`;
+  return `${yamlSection}${importSection}${bodySection}\n`;
 }

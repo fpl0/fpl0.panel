@@ -1,1 +1,1 @@
-export { parseMdxToEditor, serializeEditorToMdx, splitFrontmatter, assembleMdx } from "./mdx/index";
+export { parseMdxFile, serializeMdxFile, splitFrontmatter, assembleMdx } from "./mdx/index";

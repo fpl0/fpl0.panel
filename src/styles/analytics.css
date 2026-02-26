@@ -9,11 +9,6 @@
   max-width: 100%;
 }
 
-.analytics-view h1 {
-  font-family: var(--font-serif);
-  font-size: var(--font-size-h2);
-  margin-bottom: var(--space-4);
-}
 
 /* --- Loading overlay (filter switch) --- */
 
@@ -53,7 +48,7 @@
 .analytics-kpi {
   display: flex;
   align-items: baseline;
-  gap: var(--space-1-5, var(--space-2));
+  gap: var(--space-1-5);
 }
 
 .analytics-kpi-value {
@@ -61,13 +56,14 @@
   font-size: var(--font-size-h3);
   font-weight: 300;
   color: var(--color-text);
+  line-height: 1;
 }
 
 .analytics-kpi-label {
   font-family: var(--font-mono-brand);
   font-size: var(--font-size-micro);
   text-transform: uppercase;
-  letter-spacing: var(--letter-spacing-loose);
+  letter-spacing: var(--letter-spacing-wide);
   color: var(--color-text-muted);
 }
 
@@ -117,32 +113,32 @@
 
 .analytics-bar {
   fill: var(--color-primary);
-  opacity: 0.7;
+  opacity: var(--opacity-de-emphasize);
   transition: opacity var(--duration-normal) var(--ease-out);
+}
+
+.analytics-bar:hover {
+  opacity: 1;
 }
 
 .analytics-bar-label {
   font-family: var(--font-mono-brand);
-  font-size: 8px;
+  font-size: 9px;
   fill: var(--color-text-muted);
   pointer-events: none;
 }
 
 .analytics-date-label {
   font-family: var(--font-mono-brand);
-  font-size: 7px;
+  font-size: 8px;
   fill: var(--color-text-muted);
-  opacity: 0.7;
+  opacity: var(--opacity-de-emphasize);
   pointer-events: none;
 }
 
 .analytics-chart-baseline {
   stroke: var(--color-border);
   stroke-width: 0.5;
-}
-
-.analytics-bar:hover {
-  opacity: 1;
 }
 
 /* --- Ranked Lists --- */

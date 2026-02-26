@@ -230,50 +230,46 @@ export function LibraryView() {
 
   return (
     <div class="library-view">
-      {/* ── Header ── */}
-      <h1 class="view-title">Library</h1>
-
-      {/* ── Stats Strip ── */}
-      <div class="library-stats-strip">
-        <div class="library-kpi">
-          <span class="library-kpi-value">{totalCount()}</span>
-          <span class="library-kpi-label">entries</span>
-        </div>
-        <span class="library-kpi-sep">&middot;</span>
-        <div class="library-kpi">
-          <span class="library-kpi-value">{publishedCount()}</span>
-          <span class="library-kpi-label">published</span>
-        </div>
-        <span class="library-kpi-sep">&middot;</span>
-        <div class="library-kpi">
-          <span class="library-kpi-value">{draftCount()}</span>
-          <span class="library-kpi-label">drafts</span>
-        </div>
-        <Show when={changedCount() > 0}>
-          <span class="library-kpi-sep">&middot;</span>
+      {/* ── Header: title + KPIs in one row ── */}
+      <div class="library-header">
+        <h1 class="view-title">Library</h1>
+        <div class="library-kpi-strip">
           <div class="library-kpi">
-            <span class="library-kpi-value library-kpi-value--warn">{changedCount()}</span>
-            <span class="library-kpi-label">modified</span>
+            <span class="library-kpi-value">{totalCount()}</span>
+            <span class="library-kpi-label">entries</span>
           </div>
-        </Show>
+          <div class="library-kpi">
+            <span class="library-kpi-value">{publishedCount()}</span>
+            <span class="library-kpi-label">published</span>
+          </div>
+          <div class="library-kpi">
+            <span class="library-kpi-value">{draftCount()}</span>
+            <span class="library-kpi-label">drafts</span>
+          </div>
+          <Show when={changedCount() > 0}>
+            <div class="library-kpi">
+              <span class="library-kpi-value library-kpi-value--warn">{changedCount()}</span>
+              <span class="library-kpi-label">modified</span>
+            </div>
+          </Show>
+        </div>
       </div>
 
-      {/* ── Search ── */}
-      <input
-        ref={searchRef}
-        class="library-search-input"
-        type="text"
-        placeholder="Search entries..."
-        aria-label="Search entries"
-        value={search()}
-        onInput={(e) => {
-          setSearch(e.currentTarget.value);
-          setPage(1);
-        }}
-      />
+      {/* ── Toolbar: search + filters + sort in one row ── */}
+      <div class="library-toolbar">
+        <input
+          ref={searchRef}
+          class="library-toolbar-search"
+          type="text"
+          placeholder="Search..."
+          aria-label="Search entries"
+          value={search()}
+          onInput={(e) => {
+            setSearch(e.currentTarget.value);
+            setPage(1);
+          }}
+        />
 
-      {/* ── Filter Bar ── */}
-      <div class="library-filter-bar">
         <div class="filter-group">
           <button
             class={`filter-chip ${typeFilter() === "all" ? "active" : ""}`}
@@ -345,8 +341,8 @@ export function LibraryView() {
         </Show>
       </div>
 
-      {/* ── Tag Ribbon ── */}
-      <Show when={displayedTags().length > 0}>
+      {/* ── Tag Ribbon (only for large collections) ── */}
+      <Show when={displayedTags().length > 0 && totalCount() > PAGE_SIZE}>
         <div class="library-tag-ribbon">
           <For each={displayedTags()}>
             {([tag, count]) => (
