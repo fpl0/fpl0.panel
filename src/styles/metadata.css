@@ -298,15 +298,51 @@
   grid-column: auto;
 }
 
-/* Title input gets a visible border affordance in create context */
+/* All inputs in create-view share the library toolbar search style */
 .create-view .metadata-title-input {
-  border-bottom: var(--space-px) solid var(--color-border);
-  padding-bottom: var(--space-2);
-  transition: border-color var(--duration-normal) var(--ease-out);
+  border: var(--ui-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  padding: var(--space-2) var(--space-2);
+  transition:
+    border-color var(--duration-normal) var(--ease-out),
+    box-shadow var(--duration-normal) var(--ease-out);
 }
 
 .create-view .metadata-title-input:focus {
-  border-bottom-color: var(--color-primary);
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+.create-view .input {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-normal);
+}
+
+.create-view .tag-input-wrapper {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-normal);
+}
+
+.create-view .tag-input-wrapper:focus-within {
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+.create-view .tag-input-field {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-xs);
+}
+
+.create-view textarea.input {
+  padding: var(--space-2) var(--space-2);
 }
 
 /* --- Type description --- */

@@ -8,8 +8,8 @@ import { listen } from "@tauri-apps/api/event";
 import { createSignal } from "solid-js";
 import { startWatcher, stopWatcher } from "../commands";
 
-/** 1s suppression covers the 500ms file-watcher debounce plus margin. */
-const FS_SUPPRESS_MS = 1000;
+/** 5s suppression covers the file-watcher debounce plus git operations. */
+const FS_SUPPRESS_MS = 5000;
 let suppressUntil = 0;
 let unlistenFn: UnlistenFn | null = null;
 

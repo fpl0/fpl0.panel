@@ -16,4 +16,4 @@ export { toggleTheme, initTheme } from "./theme";
 export { toasts, addToast, updateToast, dismissToast } from "./notifications";
 export type { Toast } from "./notifications";
 export { toggleSearch, closeSearch } from "./search";
-export { devHealth, prodHealth, startHealthPolling } from "./health";
+export { devHealth, prodHealth, startHealthPolling, recheckHealth } from "./health";

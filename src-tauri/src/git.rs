@@ -11,18 +11,59 @@ pub fn git_add_commit_push(repo_path: &str, rel_path: &str, message: &str) -> Re
             .args(args)
             .current_dir(repo_path)
             .output()
-            .map_err(|e| format!("git {} failed: {}", args[0], e))?;
+            .map_err(|e| format!("Failed to run git {}: {}", args[0], e))?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(format!("git {} failed: {}", args[0], stderr));
+            return Err(format!("git {} failed: {}", args[0], stderr.trim()));
         }
         Ok(())
     };
 
-    run(&["add", rel_path])?;
+    // Clean up stale index lock from a previously interrupted git operation.
+    let lock_path = Path::new(repo_path).join(".git/index.lock");
+    if lock_path.exists() {
+        let _ = fs::remove_file(&lock_path);
+    }
+
+    // Stage changes — --all ensures deletions are staged, not just additions.
+    // "did not match any files" is non-fatal: the path was never tracked by git.
+    let add = Command::new("git")
+        .args(["add", "--all", "--", rel_path])
+        .current_dir(repo_path)
+        .output()
+        .map_err(|e| format!("Failed to run git add: {}", e))?;
+
+    if !add.status.success() {
+        let stderr = String::from_utf8_lossy(&add.stderr);
+        if stderr.contains("did not match any files") {
+            return Ok(());
+        }
+        return Err(format!("git add failed: {}", stderr.trim()));
+    }
+
+    // Check whether anything was actually staged before committing.
+    let diff = Command::new("git")
+        .args(["diff", "--cached", "--quiet"])
+        .current_dir(repo_path)
+        .output()
+        .map_err(|e| format!("Failed to check staged changes: {}", e))?;
+
+    if diff.status.success() {
+        // Exit code 0 → no staged changes, nothing to commit.
+        return Ok(());
+    }
+
     run(&["commit", "-m", message])?;
-    run(&["push"])?;
+
+    // Push, retrying once after a pull --rebase if the first attempt fails.
+    if let Err(first_err) = run(&["push"]) {
+        let _ = run(&["pull", "--rebase"]);
+        run(&["push"]).map_err(|_| {
+            format!("Failed to push after retry: {first_err}")
+        })?;
+    }
+
     Ok(())
 }
 

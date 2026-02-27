@@ -27,4 +27,9 @@ export function startHealthPolling() {
   intervalId = setInterval(pollHealth, HEALTH_TTL);
 }
 
+/** Trigger an immediate re-poll (e.g. after starting the dev server). */
+export function recheckHealth() {
+  pollHealth();
+}
+
 export { devHealth, prodHealth };

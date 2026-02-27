@@ -25,36 +25,52 @@ export async function publishEntry(slug: string): Promise<ContentEntry> {
   const repoPath = state.config.repo_path;
   if (!repoPath) throw new Error("No repo configured");
   suppressFsChange();
-  const updated = await publish(repoPath, slug);
-  await refreshEntries();
-  return updated;
+  try {
+    const updated = await publish(repoPath, slug);
+    return updated;
+  } finally {
+    suppressFsChange();
+    await refreshEntries();
+  }
 }
 
 export async function unpublishEntry(slug: string): Promise<ContentEntry> {
   const repoPath = state.config.repo_path;
   if (!repoPath) throw new Error("No repo configured");
   suppressFsChange();
-  const updated = await unpublish(repoPath, slug);
-  await refreshEntries();
-  return updated;
+  try {
+    const updated = await unpublish(repoPath, slug);
+    return updated;
+  } finally {
+    suppressFsChange();
+    await refreshEntries();
+  }
 }
 
 export async function rollbackEntry(slug: string): Promise<ContentEntry> {
   const repoPath = state.config.repo_path;
   if (!repoPath) throw new Error("No repo configured");
   suppressFsChange();
-  const updated = await rollback(repoPath, slug);
-  await refreshEntries();
-  return updated;
+  try {
+    const updated = await rollback(repoPath, slug);
+    return updated;
+  } finally {
+    suppressFsChange();
+    await refreshEntries();
+  }
 }
 
 export async function deleteEntry(slug: string): Promise<void> {
   const repoPath = state.config.repo_path;
   if (!repoPath) throw new Error("No repo configured");
   suppressFsChange();
-  await deleteContent(repoPath, slug);
-  await refreshEntries();
-  setState("view", { kind: "library" });
+  try {
+    await deleteContent(repoPath, slug);
+  } finally {
+    suppressFsChange();
+    await refreshEntries();
+    setState("view", { kind: "library" });
+  }
 }
 
 /** Patch fields on an entry in the store by slug (optimistic UI update). */

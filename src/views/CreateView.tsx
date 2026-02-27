@@ -5,6 +5,7 @@ import {
   refreshEntries,
   openEntry,
   addToast,
+  suppressFsChange,
 } from "../lib/store";
 
 const SUMMARY_MIN = 50;
@@ -68,6 +69,7 @@ export function CreateView() {
     }
 
     setCreating(true);
+    suppressFsChange();
     try {
       const args = {
         title: title(),
@@ -81,6 +83,7 @@ export function CreateView() {
           ? await createPost(repoPath, args)
           : await createApp(repoPath, args);
 
+      suppressFsChange();
       await refreshEntries();
       addToast(`Created ${contentType()}: ${entry.title}`);
       openEntry(entry);

@@ -30,6 +30,7 @@ export function AppDetailView(props: Props) {
   const [showRollbackConfirm, setShowRollbackConfirm] = createSignal(false);
   const [publishing, setPublishing] = createSignal(false);
   const [iframeError, setIframeError] = createSignal(false);
+  const [previewReady, setPreviewReady] = createSignal(false);
   const [_saveState, setSaveState] = createSignal<"saved" | "saving" | "unsaved">("saved");
 
   let iframeRef: HTMLIFrameElement | undefined;
@@ -37,10 +38,20 @@ export function AppDetailView(props: Props) {
   // Snapshot file_path at mount so async operations don't crash if entry disappears
   let filePath = "";
 
+  async function checkPreviewAvailable() {
+    try {
+      const res = await fetch(appPreviewUrl(), { method: "HEAD" });
+      setPreviewReady(res.ok);
+    } catch {
+      setPreviewReady(false);
+    }
+  }
+
   onMount(() => {
     const e = activeEntry();
     if (!e) { navigate({ kind: "list" }); return; }
     filePath = e.file_path;
+    checkPreviewAvailable();
   });
 
   onCleanup(() => {
@@ -62,6 +73,7 @@ export function AppDetailView(props: Props) {
     // filePath is .../apps/{slug}/index.md — match any file in the parent directory
     const appDir = filePath.replace(/\/index\.md$/, "");
     if (paths.some((p) => p.startsWith(appDir))) {
+      checkPreviewAvailable();
       reloadIframe();
       refreshEntries().catch(() => {});
       clearExternalChange();
@@ -178,6 +190,7 @@ export function AppDetailView(props: Props) {
   });
 
   function reloadIframe() {
+    checkPreviewAvailable();
     if (iframeRef) {
       setIframeError(false);
       iframeRef.src = appPreviewUrl();
@@ -226,30 +239,28 @@ export function AppDetailView(props: Props) {
 
           <div class="editor-layout">
             <main class="editor-primary app-iframe-container">
-              <iframe
-                ref={iframeRef}
-                class="app-iframe"
-                src={appPreviewUrl()}
-                onError={() => setIframeError(true)}
-                onLoad={(e) => {
-                  try {
-                    const doc = (e.target as HTMLIFrameElement).contentDocument;
-                    if (doc && doc.title === "") {
-                      // Heuristic: blank page likely means server isn't running
-                    }
-                    setIframeError(false);
-                  } catch {
-                    // Cross-origin is expected for localhost — iframe loaded fine
-                    setIframeError(false);
-                  }
-                  syncIframeTheme();
-                }}
-              />
-              <Show when={iframeError()}>
+              <Show when={previewReady()} fallback={
                 <div class="app-iframe-fallback">
-                  <p>Could not reach the Astro dev server.</p>
-                  <p class="system-label">Run <code>bun dev</code> in your project, then click Reload.</p>
+                  <p>App preview not available yet.</p>
+                  <p class="system-label">The Astro dev server hasn't picked up this app. Edit the files or click Reload to retry.</p>
                 </div>
+              }>
+                <iframe
+                  ref={iframeRef}
+                  class="app-iframe"
+                  src={appPreviewUrl()}
+                  onError={() => setIframeError(true)}
+                  onLoad={() => {
+                    setIframeError(false);
+                    syncIframeTheme();
+                  }}
+                />
+                <Show when={iframeError()}>
+                  <div class="app-iframe-fallback">
+                    <p>Could not reach the Astro dev server.</p>
+                    <p class="system-label">Run <code>bun dev</code> in your project, then click Reload.</p>
+                  </div>
+                </Show>
               </Show>
             </main>
 
