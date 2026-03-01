@@ -16,7 +16,9 @@
   src: url("@fontsource-variable/inter/files/inter-latin-wght-normal.woff2")
     format("woff2-variations");
   unicode-range:
-    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
 }
 
 /* Inter fallback — Arial with metrics adjusted to match Inter */
@@ -27,7 +29,7 @@
   font-weight: 100 900;
   size-adjust: 108.19%;
   ascent-override: 89.55%;
-  descent-override: 22.30%;
+  descent-override: 22.3%;
   line-gap-override: 0%;
 }
 
@@ -37,7 +39,8 @@
   font-style: normal;
   font-display: block;
   font-weight: 300;
-  src: url("@fontsource/merriweather/files/merriweather-latin-300-normal.woff2") format("woff2");
+  src: url("@fontsource/merriweather/files/merriweather-latin-300-normal.woff2")
+    format("woff2");
 }
 
 /* Merriweather — Latin subset, regular (strong/emphasis in prose) */
@@ -46,7 +49,8 @@
   font-style: normal;
   font-display: block;
   font-weight: 400;
-  src: url("@fontsource/merriweather/files/merriweather-latin-400-normal.woff2") format("woff2");
+  src: url("@fontsource/merriweather/files/merriweather-latin-400-normal.woff2")
+    format("woff2");
 }
 
 /* Merriweather — Latin subset, bold */
@@ -55,7 +59,8 @@
   font-style: normal;
   font-display: block;
   font-weight: 700;
-  src: url("@fontsource/merriweather/files/merriweather-latin-700-normal.woff2") format("woff2");
+  src: url("@fontsource/merriweather/files/merriweather-latin-700-normal.woff2")
+    format("woff2");
 }
 
 /* Merriweather fallback — Georgia with metrics adjusted to match Merriweather */
@@ -76,9 +81,12 @@
   font-style: normal;
   font-display: block;
   font-weight: 400;
-  src: url("@fontsource/space-mono/files/space-mono-latin-400-normal.woff2") format("woff2");
+  src: url("@fontsource/space-mono/files/space-mono-latin-400-normal.woff2")
+    format("woff2");
   unicode-range:
-    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
 }
 
 /* JetBrains Mono — Latin subset */
@@ -87,9 +95,12 @@
   font-style: normal;
   font-display: block;
   font-weight: 400;
-  src: url("@fontsource/jetbrains-mono/files/jetbrains-mono-latin-400-normal.woff2") format("woff2");
+  src: url("@fontsource/jetbrains-mono/files/jetbrains-mono-latin-400-normal.woff2")
+    format("woff2");
   unicode-range:
-    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
 }
 
 :root {
@@ -145,11 +156,11 @@
   --spring-soft: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* --- Fluid Type Engine (Dual-Modular Scale) --- */
-  --font-ratio-content: 1.25;  /* Major Third for prose/headings */
-  --font-ratio-ui: 1.125;      /* Major Second for interface chrome */
-  
+  --font-ratio-content: 1.25; /* Major Third for prose/headings */
+  --font-ratio-ui: 1.125; /* Major Second for interface chrome */
+
   --font-size-base: clamp(1rem, 0.11vw + 0.96rem, 1.0625rem);
-  
+
   /* Content Hierarchy (1.25 ratio) */
   --font-size-h3: calc(var(--font-size-base) * var(--font-ratio-content));
   --font-size-h2: calc(var(--font-size-h3) * var(--font-ratio-content));
@@ -164,13 +175,17 @@
   --font-size-xs: calc(var(--font-size-sm) / var(--font-ratio-ui));
   --font-size-xxs: calc(var(--font-size-xs) / var(--font-ratio-ui));
   --font-size-label: calc(var(--font-size-xxs) / var(--font-ratio-ui));
-  --font-size-micro: clamp(0.75rem, calc(var(--font-size-label) / var(--font-ratio-ui)), 0.8rem);
+  --font-size-micro: clamp(
+    0.75rem,
+    calc(var(--font-size-label) / var(--font-ratio-ui)),
+    0.8rem
+  );
 
   /* Optical Balance Engine */
   --font-weight-ui-sm: 500;
   --font-weight-ui-xs: 600;
   --font-weight-ui-micro: 700;
-  
+
   --letter-spacing-ui-xs: 0.02em;
   --letter-spacing-ui-micro: 0.05em;
 
@@ -182,29 +197,34 @@
   --line-height-relaxed: calc(var(--lh-ratio) * 1.5);
   --line-height-loose: calc(var(--lh-ratio) * 1.7);
 
-  /* --- Color Synthesis (OKLCH) --- */
-  --hue: 85;
-  --color-bg: oklch(0.97 0.015 var(--hue));
-  --color-surface: oklch(0.94 0.02 var(--hue));
-  --color-surface-raised: oklch(0.91 0.025 var(--hue));
-  --color-highlight: oklch(0.92 0.04 var(--hue));
+  /* --- Color Synthesis (OKLCH Perceptual Field) --- */
+  /* Master Hue: 80 (Deep Amber/Gold in OKLCH) */
+  --hue: 80;
+  --color-bg: oklch(0.96 0.025 var(--hue)); /* Richer, creamier paper */
+  --color-surface: oklch(0.93 0.03 var(--hue));
+  --color-surface-raised: oklch(0.89 0.035 var(--hue));
+  --color-highlight: oklch(0.91 0.05 var(--hue));
 
-  --text-hue: 45;
-  --color-text: oklch(0.22 0.03 var(--text-hue));
-  --color-text-secondary: oklch(0.42 0.02 var(--text-hue));
-  --color-text-muted: oklch(0.52 0.015 var(--text-hue));
+  /* Text Hierarchy (Perceptually Uniform Sepia) */
+  --text-hue: 40; /* Warmer, deeper text hue */
+  --color-text: oklch(
+    0.18 0.04 var(--text-hue)
+  ); /* Deeper charcoal, higher chroma */
+  --color-text-secondary: oklch(0.38 0.035 var(--text-hue));
+  --color-text-muted: oklch(0.48 0.03 var(--text-hue));
 
-  --color-primary: oklch(0.55 0.12 55);
-  --color-primary-dim: oklch(0.65 0.1 55);
-  --color-accent-cool: oklch(0.55 0.08 190);
+  /* Primary Accent (Richer Cognac/Ochre) */
+  --color-primary: oklch(0.52 0.18 45); /* Much richer chroma */
+  --color-primary-dim: oklch(0.62 0.14 45);
+  --color-accent-cool: oklch(0.52 0.12 195); /* Deeper, richer teal */
 
-  --color-warn: oklch(0.65 0.15 80);
-  --color-error: oklch(0.55 0.18 25);
+  --color-warn: oklch(0.62 0.18 80);
+  --color-error: oklch(0.52 0.2 25);
   --color-success: oklch(0.65 0.2 145);
   --color-warn-surface: oklch(0.95 0.05 85);
 
-  --color-border: oklch(0.88 0.02 var(--hue));
-  --color-border-subtle: oklch(0.92 0.01 var(--hue));
+  --color-border: oklch(0.86 0.03 var(--hue));
+  --color-border-subtle: oklch(0.9 0.02 var(--hue));
 
   /* --- Chromatic Elevation --- */
   --shadow-color: oklch(0.1 0.02 var(--hue) / 0.08);
@@ -241,8 +261,10 @@
   --font-sans: "Inter Variable", "Inter Fallback", system-ui, sans-serif;
   --font-serif: "Merriweather", "Merriweather Fallback", serif;
   --font-display: var(--font-serif);
-  --font-mono-brand: "Space Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-mono-brand:
+    "Space Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-mono:
+    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
   --radius-sm: 4px;
   --radius-md: 6px;
@@ -313,30 +335,37 @@
 }
 
 [data-theme="dark"] {
-  --hue: 30;
+  /* Master Hue: 40 (Neutral Antique Warmth) */
+  --hue: 40;
   --text-hue: 45;
-  --color-bg: oklch(0.18 0.012 var(--hue));
-  --color-surface: oklch(0.22 0.015 var(--hue));
-  --color-surface-raised: oklch(0.26 0.018 var(--hue));
-  --color-highlight: oklch(0.24 0.03 var(--hue));
 
-  --color-text: oklch(0.95 0.01 var(--text-hue));
-  --color-text-secondary: oklch(0.8 0.008 var(--text-hue));
-  --color-text-muted: oklch(0.65 0.005 var(--text-hue));
+  /* Perfect Background Logarithmic Staircase */
+  --color-bg: oklch(0.17 0.015 var(--hue)); /* Matte dark roast void */
+  --color-surface: oklch(0.21 0.02 var(--hue));
+  --color-surface-raised: oklch(0.25 0.025 var(--hue));
+  --color-highlight: oklch(0.23 0.03 var(--hue));
 
-  --color-primary: oklch(0.88 0.06 85);
-  --color-primary-dim: oklch(0.75 0.05 85);
-  --color-accent-cool: oklch(0.85 0.04 190);
+  /* Typography: Dropped peak luminance (L=0.86) to eliminate halation */
+  --color-text: oklch(0.86 0.015 var(--text-hue)); /* Soft bone white */
+  --color-text-secondary: oklch(0.74 0.01 var(--text-hue)); /* Ash */
+  --color-text-muted: oklch(0.62 0.01 var(--text-hue)); /* Graphite */
 
-  --color-warn: oklch(0.8 0.1 80);
-  --color-error: oklch(0.7 0.12 25);
+  /* Accents: The "Aged Gold Leaf" Philosophy */
+  --color-primary: oklch(0.78 0.06 75); /* Aged Gold Leaf */
+  --color-primary-dim: oklch(0.68 0.04 75); /* Deep Gold Reflection */
+  --color-accent-cool: oklch(0.75 0.06 190); /* Oxidized Copper / Sage */
+
+  /* Semantic colors desaturated for dark mode harmony */
+  --color-warn: oklch(0.78 0.08 75);
+  --color-error: oklch(0.68 0.08 25);
   --color-success: oklch(0.7 0.18 145);
   --color-warn-surface: oklch(0.25 0.04 85);
 
-  --color-border: oklch(0.28 0.02 var(--hue));
-  --color-border-subtle: oklch(0.24 0.015 var(--hue));
+  /* Structure: Borders blending perfectly into the background */
+  --color-border: oklch(0.27 0.015 var(--hue));
+  --color-border-subtle: oklch(0.21 0.01 var(--hue));
 
-  --shadow-color: oklch(0.02 0.01 var(--hue) / 0.6);
+  --shadow-color: oklch(0.02 0.01 var(--hue) / 0.5);
 
   --color-code-bg: oklch(0.2 0.012 var(--hue));
   --color-code-border: oklch(0.25 0.015 var(--hue));
