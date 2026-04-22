@@ -28,6 +28,7 @@ export interface ContentEntry {
   summary: string;
   tags: string[];
   is_draft: boolean;
+  is_pinned: boolean;
   created_date: string;
   publication_date: string | null;
   author: string | null;
@@ -156,6 +157,14 @@ export function unpublish(repoPath: string, slug: string): Promise<ContentEntry>
 
 export function rollback(repoPath: string, slug: string): Promise<ContentEntry> {
   return invoke("rollback", { repoPath, slug });
+}
+
+export function setPinned(
+  repoPath: string,
+  slug: string,
+  pinned: boolean,
+): Promise<ContentEntry> {
+  return invoke("set_pinned", { repoPath, slug, pinned });
 }
 
 export function gitStatus(repoPath: string): Promise<string> {

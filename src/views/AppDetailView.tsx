@@ -9,6 +9,7 @@ import {
   publishEntry,
   unpublishEntry,
   rollbackEntry,
+  setPinnedEntry,
   deleteEntry,
   refreshEntries,
   addToast,
@@ -121,6 +122,17 @@ export function AppDetailView(props: Props) {
       updateToast(tid, `Rollback failed: ${e}`, "error");
     } finally {
       setPublishing(false);
+    }
+  }
+
+  async function handleTogglePin(pinned: boolean) {
+    if (!state.config.repo_path) return;
+    const tid = addToast(pinned ? "Pinning..." : "Unpinning...", "warn");
+    try {
+      const updated = await setPinnedEntry(props.slug, pinned);
+      updateToast(tid, pinned ? `Pinned: ${updated.title}` : `Unpinned: ${updated.title}`, "success");
+    } catch (e) {
+      updateToast(tid, `Pin toggle failed: ${e}`, "error");
     }
   }
 
@@ -265,7 +277,7 @@ export function AppDetailView(props: Props) {
             </main>
 
             <aside class="editor-sidebar">
-              <MetadataPanel entry={entry} onFieldChange={handleMetadataChange} />
+              <MetadataPanel entry={entry} onFieldChange={handleMetadataChange} onTogglePin={handleTogglePin} />
             </aside>
           </div>
 

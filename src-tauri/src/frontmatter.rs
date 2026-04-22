@@ -168,6 +168,7 @@ pub fn parse_content_entry(
     let (yaml, rest) = split_frontmatter(&content)?;
 
     let is_draft = get_yaml_bool(&yaml, "isDraft").unwrap_or(true);
+    let is_pinned = get_yaml_bool(&yaml, "isPinned").unwrap_or(false);
 
     let modified_date = fs::metadata(file_path)
         .ok()
@@ -217,6 +218,7 @@ pub fn parse_content_entry(
         summary: get_yaml_field(&yaml, "summary").unwrap_or_default(),
         tags: get_yaml_tags(&yaml),
         is_draft,
+        is_pinned,
         created_date: get_yaml_field(&yaml, "createdDate").unwrap_or_else(|| "unknown".into()),
         publication_date,
         author,

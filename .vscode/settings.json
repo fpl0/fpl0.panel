@@ -1,0 +1,9 @@
+{
+  "rust-analyzer.server.path": "/Users/fpl0/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rust-analyzer",
+  "rust-analyzer.cargo.extraEnv": {
+    "RUSTUP_TOOLCHAIN": "stable"
+  },
+  "rust-analyzer.server.extraEnv": {
+    "RUSTUP_TOOLCHAIN": "stable"
+  }
+}

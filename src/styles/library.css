@@ -233,6 +233,14 @@
   margin-bottom: 0;
 }
 
+.library-pin-indicator {
+  display: inline-block;
+  margin-right: var(--space-2);
+  color: var(--color-primary);
+  vertical-align: baseline;
+  transform: rotate(-18deg);
+}
+
 .library-view .post-summary {
   font-size: var(--font-size-xs);
   -webkit-line-clamp: 1;

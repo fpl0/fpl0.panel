@@ -39,6 +39,7 @@ pub fn run() {
             commands::publish,
             commands::unpublish,
             commands::rollback,
+            commands::set_pinned,
             commands::git_status,
             commands::open_in_vscode,
             commands::start_watcher,

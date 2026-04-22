@@ -16,6 +16,7 @@ function formatDateTime(dateStr: string): string {
 interface Props {
   entry: ContentEntry;
   onFieldChange: (field: string, value: string) => void;
+  onTogglePin?: (pinned: boolean) => void;
   wordCount?: number;
   charCount?: number;
 }
@@ -91,10 +92,21 @@ export function MetadataPanel(props: Props) {
     <div class="metadata-panel">
       <div class="metadata-body">
         {/* Status */}
-        <div class="metadata-field">
+        <div class="metadata-field metadata-status-row">
           <span class={`status-badge ${props.entry.is_draft ? "draft" : "published"}`}>
             {props.entry.is_draft ? "Draft" : "Published"}
           </span>
+          {props.onTogglePin && (
+            <button
+              type="button"
+              class={`pin-toggle ${props.entry.is_pinned ? "active" : ""}`}
+              aria-pressed={props.entry.is_pinned}
+              title={props.entry.is_pinned ? "Unpin from top of feed" : "Pin to top of feed"}
+              onClick={() => props.onTogglePin?.(!props.entry.is_pinned)}
+            >
+              {props.entry.is_pinned ? "Pinned" : "Pin"}
+            </button>
+          )}
         </div>
 
         {/* Title */}

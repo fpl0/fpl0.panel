@@ -8,6 +8,7 @@ import {
   deleteContent,
   listContent,
   publish,
+  setPinned,
   unpublish,
   rollback,
 } from "../commands";
@@ -40,6 +41,19 @@ export async function unpublishEntry(slug: string): Promise<ContentEntry> {
   suppressFsChange();
   try {
     const updated = await unpublish(repoPath, slug);
+    return updated;
+  } finally {
+    suppressFsChange();
+    await refreshEntries();
+  }
+}
+
+export async function setPinnedEntry(slug: string, pinned: boolean): Promise<ContentEntry> {
+  const repoPath = state.config.repo_path;
+  if (!repoPath) throw new Error("No repo configured");
+  suppressFsChange();
+  try {
+    const updated = await setPinned(repoPath, slug, pinned);
     return updated;
   } finally {
     suppressFsChange();

@@ -242,6 +242,43 @@
   border-color: var(--color-success);
 }
 
+/* --- Status row with inline pin toggle --- */
+
+.metadata-status-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.pin-toggle {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  font-family: var(--font-mono-brand);
+  font-size: var(--font-size-micro);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-loose);
+  padding: var(--space-px) var(--space-3);
+  border-radius: var(--radius-full);
+  border: var(--space-px) solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  line-height: var(--line-height-tight);
+  transition: color var(--duration-in) var(--ease-out), border-color var(--duration-in) var(--ease-out);
+}
+
+.pin-toggle:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.pin-toggle.active {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
 /* --- Metadata row (inline label + value) --- */
 
 .metadata-row {

@@ -197,6 +197,37 @@ pub async fn unpublish(repo_path: String, slug: String) -> Result<ContentEntry, 
 }
 
 #[tauri::command]
+pub async fn set_pinned(
+    repo_path: String,
+    slug: String,
+    pinned: bool,
+) -> Result<ContentEntry, String> {
+    let base = Path::new(&repo_path);
+    let (file_path, content_type) = content::find_content_file(base, &slug)?;
+    let file_content =
+        fs::read_to_string(&file_path).map_err(|e| format!("Failed to read file: {e}"))?;
+    let (yaml, rest) = frontmatter::split_frontmatter(&file_content)
+        .ok_or_else(|| "Could not parse frontmatter.".to_string())?;
+
+    let current = frontmatter::get_yaml_bool(&yaml, "isPinned").unwrap_or(false);
+    if current == pinned {
+        return frontmatter::parse_content_entry(&slug, &content_type, &file_path)
+            .ok_or_else(|| "Failed to parse entry.".to_string());
+    }
+
+    let new_yaml = if frontmatter::get_yaml_bool(&yaml, "isPinned").is_some() {
+        frontmatter::set_frontmatter_field(&yaml, "isPinned", &pinned.to_string())
+    } else {
+        frontmatter::insert_field_after(&yaml, "isDraft", "isPinned", &pinned.to_string())
+    };
+    let new_content = frontmatter::assemble_file(&new_yaml, &rest);
+    fs::write(&file_path, &new_content).map_err(|e| format!("Failed to write file: {e}"))?;
+
+    frontmatter::parse_content_entry(&slug, &content_type, &file_path)
+        .ok_or_else(|| "Failed to parse entry after pin toggle.".to_string())
+}
+
+#[tauri::command]
 pub async fn rollback(repo_path: String, slug: String) -> Result<ContentEntry, String> {
     let base = Path::new(&repo_path);
     let (file_path, content_type) = content::find_content_file(base, &slug)?;

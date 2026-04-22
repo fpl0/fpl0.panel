@@ -10,6 +10,7 @@ import {
   publishEntry,
   unpublishEntry,
   rollbackEntry,
+  setPinnedEntry,
   deleteEntry,
   refreshEntries,
   patchEntry,
@@ -267,6 +268,19 @@ export function EditorView(props: Props) {
     }
   }
 
+  async function handleTogglePin(pinned: boolean) {
+    if (!state.config.repo_path) return;
+    await saveToDisk();
+    const tid = addToast(pinned ? "Pinning..." : "Unpinning...", "warn");
+    try {
+      const updated = await setPinnedEntry(props.slug, pinned);
+      await syncYamlFromDisk();
+      updateToast(tid, pinned ? `Pinned: ${updated.title}` : `Unpinned: ${updated.title}`, "success");
+    } catch (e) {
+      updateToast(tid, `Pin toggle failed: ${e}`, "error");
+    }
+  }
+
   async function handleDelete() {
     if (!state.config.repo_path) return;
     setShowDeleteConfirm(false);
@@ -512,7 +526,7 @@ export function EditorView(props: Props) {
             </Show>
 
             <aside class="editor-sidebar">
-              <MetadataPanel entry={entry} onFieldChange={handleMetadataChange} wordCount={wordCount()} charCount={charCount()} />
+              <MetadataPanel entry={entry} onFieldChange={handleMetadataChange} onTogglePin={handleTogglePin} wordCount={wordCount()} charCount={charCount()} />
             </aside>
           </div>
 

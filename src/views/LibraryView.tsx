@@ -111,9 +111,11 @@ export function LibraryView() {
       items = items.filter((e) => e.tags.some((t) => tags.has(t)));
     }
 
-    // Sort
+    // Sort — pinned entries always rise to the top within the current filter.
     const sort = sortBy();
     items = [...items].sort((a, b) => {
+      const pinDiff = Number(b.is_pinned) - Number(a.is_pinned);
+      if (pinDiff !== 0) return pinDiff;
       if (sort === "title") return a.title.localeCompare(b.title);
       if (sort === "published") {
         const dateA = a.publication_date ?? a.created_date;
@@ -400,6 +402,25 @@ export function LibraryView() {
                       }
                     }}
                   >
+                    <Show when={entry.is_pinned}>
+                      <svg
+                        class="library-pin-indicator"
+                        viewBox="0 0 16 16"
+                        width="10"
+                        height="10"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.4"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-label="Pinned"
+                      >
+                        <title>Pinned</title>
+                        <path d="M10.5 1.5 14.5 5.5" />
+                        <path d="M12.5 3.5 8 8l-3 0-2 2 5 5 2-2 0-3 4.5-4.5" />
+                        <path d="M6 10 2 14" />
+                      </svg>
+                    </Show>
                     {entry.title}
                   </span>
                   <Show when={entry.summary}>

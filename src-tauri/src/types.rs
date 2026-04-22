@@ -24,6 +24,7 @@ pub struct ContentEntry {
     pub summary: String,
     pub tags: Vec<String>,
     pub is_draft: bool,
+    pub is_pinned: bool,
     pub created_date: String,
     pub publication_date: Option<String>,
     pub author: Option<String>,
